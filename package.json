@@ -2,7 +2,7 @@
   "name": "@record/os",
   "version": "0.0.1",
   "description": "A 2017 OS",
-  "main": "dist/index.js",
+  "main": "dist/boot.js",
   "bin": {
     "record": "dist/bin/record"
   },
@@ -16,7 +16,6 @@
     "dist": "npm run build",
     "deploy": "npm run dist"
   },
-  "typings": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/checle/os.git"
