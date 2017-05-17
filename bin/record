@@ -1,0 +1,3 @@
+#!/usr/bin/node
+require('../dist/boot/node.js')
+require('../dist/bin/record.js')
