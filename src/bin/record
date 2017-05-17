@@ -1,2 +1,1 @@
-#!/usr/bin/node
-require('./record.js')
+System.import('./record.js')
