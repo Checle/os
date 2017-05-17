@@ -4,17 +4,18 @@ import {IDMap} from '../utils/pool.js'
 import {Zone} from '@record/zone'
 
 export default class Process extends Zone {
-  static current = null
+  static current = new Process()
 
   cwd
   path
   api
   files
+  result
+  env
 
   arguments = null
   scope = null
   actions = []
-  env = {}
 
   constructor (parent) {
     super()
@@ -25,11 +26,13 @@ export default class Process extends Zone {
       this.uid = parent.uid
       this.gid = parent.gid
       this.files = new IDMap(parent.files)
+      this.env = Object.assign({}, parent.env)
     } else {
       this.namespace = new Namespace()
       this.files = new IDMap()
       this.uid = 0
       this.gid = 0
+      this.env = {}
     }
 
     this.parent = parent
@@ -48,7 +51,11 @@ export default class Process extends Zone {
     Process.current = this
 
     try {
-      return super.run(...arguments)
+      let result = super.run(...arguments)
+
+      this.result = result
+
+      return result
     } finally {
       Process.current = previous
     }
@@ -65,5 +72,3 @@ export default class Process extends Zone {
     return target.apply(api, args)
   }
 }
-
-Process.prototype.namespace = new Namespace()

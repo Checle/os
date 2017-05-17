@@ -1,3 +1,5 @@
+export {branch, clone, uselib} from './sys/record.js'
+
 export const STDIN_FILENO = 0
 export const STDOUT_FILENO = 1
 export const STDERR_FILENO = 2
@@ -58,11 +60,11 @@ export function pread () {
   return syscall('pread', ...arguments)
 }
 
-export function pwrite (filedes, buf, nbytes, offset) {
+export function pwrite (fildes, buf, nbyte, offset) {
   return syscall('pwrite', ...arguments)
 }
 
-export function read () {
+export function read (fildes, buf, nbyte) {
   return syscall('read', ...arguments)
 }
 
@@ -86,7 +88,7 @@ export function unlink (path) {
   return syscall('unlink', ...arguments)
 }
 
-export function write (filedes, buf, nbytes) {
+export function write (fildes, buf, nbyte) {
   return syscall('write', ...arguments)
 }
 
@@ -133,7 +135,6 @@ export function execve (path, argv = [], env) {
 }
 
 export function execl (path, ...args) {
-  console.log(23)
   return execv(path, args)
 }
 
@@ -147,10 +148,10 @@ export function pipe () {
   throw 'Not implemented'
 }
 
-export function dup (filedes) {
+export function dup (fildes) {
   return syscall('dup', arguments)
 }
 
-export function dup2 (filedes, filedes2) {
+export function dup2 (fildes, fildes2) {
   return syscall('dup2', arguments)
 }

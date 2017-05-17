@@ -1,7 +1,7 @@
-import Api from './api'
+import * as api from './api'
 import {IDMap} from '../utils/pool'
 
 export default class Namespace {
-  api = new Api()
+  api = Object.assign({}, api)
   processes = new IDMap()
 }

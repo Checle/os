@@ -1,7 +1,3 @@
-import * as fcntl from '../fcntl'
-import * as unistd from '../unistd'
-import * as stdio from '../stdio'
-
 export function branch (path1, path2) {
   return syscall('branch', ...arguments)
 }

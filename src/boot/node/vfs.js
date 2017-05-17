@@ -2,20 +2,20 @@ import * as fs from 'fs'
 import {spawn} from 'child_process'
 
 let vfs = {
-  read (filedes, buf, nbytes) {
+  read (fildes, buf, nbyte) {
     if (!buf) {
       let buffers = []
-      let nbytes
+      let nbyte
 
       do {
         let buf = new Buffer(BUFSIZ)
 
-        nbytes = read(filedes, buf)
-        buffers.push(buf.slice(0, nbytes))
-      } while (nbytes)
+        nbyte = read(fildes, buf)
+        buffers.push(buf.slice(0, nbyte))
+      } while (nbyte)
     }
 
-    return read(filedes, buf, 0, nbytes, null)
+    return read(fildes, buf, 0, nbyte, null)
   },
 
   branch (source, target) {
@@ -28,40 +28,33 @@ let vfs = {
   },
 }
 
-function createFunction (async, sync) {
+function createFunction (name, transformArgs) {
+  let async = fs[name]
+
   return function (...args) {
-    let promise
-
-    return {
-      then: (resolve, reject) => {
-        if (!promise) {
-          promise = new Promise((resolve, reject) => {
-            let callback = (error, value) => {
-              if (error == null) resolve(value)
-              else reject(error)
-            }
-            async.apply(null, args.concat(callback))
-          })
-        }
-
-        return promise.then(resolve, reject)
-      },
-      valueOf: () => {
-        if (promise) return this
-
-        return sync.apply(null, args)
+    return new Promise((resolve, reject) => {
+      let callback = (error, value) => {
+        if (error == null) resolve(value)
+        else reject(error)
       }
-    }
+
+      if (transformArgs) args = transformArgs(...args)
+
+      async(...args, callback)
+    })
   }
 }
 
-const names = ['access', 'chmod', 'chown', 'close', 'fchmod', 'fchown',
+let names = ['access', 'chmod', 'chown', 'close', 'fchmod', 'fchown',
   'fdatasync', 'fstat', 'fsync', 'ftruncate', 'lchmod', 'lchown', 'link',
-  'lstat', 'mkdir', 'open', 'readdir', 'readlink', 'realpath', 'read',
+  'lstat', 'mkdir', 'readdir', 'readlink', 'realpath',
   'rename', 'rmdir', 'stat', 'symlink', 'truncate', 'unlink', 'write']
 
 for (let name of names) {
-  vfs[name] = createFunction(fs[name], fs[name + 'Sync'])
+  vfs[name] = createFunction(name)
 }
+
+vfs['open'] = createFunction('open', (path, oflag, ...args) => [path, oflag == null ? 'r' : oflag, ...args])
+vfs['read'] = createFunction('read', (fildes, buf, nbyte) => [fildes, buf, 0, nbyte == null ? buf.length : nbyte, null])
 
 export default vfs
