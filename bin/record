@@ -1,3 +1,4 @@
 #!/usr/bin/node
-require('../dist/boot/node.js')
-require('../dist/bin/record.js')
+require('../dist/boot/node.js').default.then(function () {
+  require('../dist/bin/record.js')
+})

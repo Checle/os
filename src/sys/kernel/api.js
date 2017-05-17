@@ -1,10 +1,13 @@
-import Process from './process'
+import Process from './process.js'
 import {instantiate} from '@record/web-assembly'
+import {X_OK} from '../../lib/libc.js'
 
 export default class Api {
-  process = null
+  get process () {
+    return Process.current
+  }
 
-  readfile () {
+  async readfile (filename) {
     let fd = await this.open(filename)
     let buffers = []
     let encoder = new TextEncoder('utf-8')
@@ -64,6 +67,8 @@ export default class Api {
     let child = new Process(this.process)
 
     child.run(fn, thisArg, args)
+
+    return child.id
   }
 
   exit (status) {
@@ -80,7 +85,7 @@ export default class Api {
     pathname = pathname.indexOf('/') === -1 ? pathname : './' + pathname
 
     // Resolve pathname against `PATH` and enable native module resolution such as filename extension
-    let filename = await this.resolve(pathame, null, this.process.env.PATH)
+    let filename = await this.resolve(pathname, null, this.process.env.PATH)
 
     await this.access(filename, X_OK)
 
@@ -103,8 +108,8 @@ export default class Api {
     return new Promise(() => null)
   }
 
-  async realpath (fileName) {
-    throw 'Not implemented'
+  async realpath (filename) {
+    return new URL(filename, 'file://' + this.process.cwd).pathname
   }
 
   dup (filedes) {
@@ -121,12 +126,12 @@ export default class Api {
 
       if (!process) reject(new Error('ECHILD'))
 
-      process.then(result => resolve(pid), error => reject(error))
+      process.then(status => resolve(status), error => reject(error))
     })
   }
 
   defaultAction = {
-    handler = (sig) => {
+    handler: sig => {
       this.process.cancel()
     }
   }
@@ -142,11 +147,11 @@ export default class Api {
   }
 
   async resolve (filename, base = null, path = null) {
-    let paths = path == null ? [''] : path.split(':')
+    let paths = path ? path.split(':') : [null]
 
     if (base != null) throw 'Not implemented'
 
-    for (let dirname of path.split(':')) {
+    for (let dirname of paths) {
       try {
         let path = await this.realpath(filename, dirname)
 
@@ -169,10 +174,10 @@ export default class Api {
     }
 
     let namespace = this.process.namespace
-    let api = Object.create(namespace.api)
 
-    Object.assign(api, library)
+    namespace.api = Object.create(namespace.api)
 
-    namespace.api = api
+    Object.assign(namespace.api, library)
+    Object.assign(this.process.api, library)
   }
 }

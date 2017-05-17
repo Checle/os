@@ -2,7 +2,7 @@ import {open, O_RDONLY} from '../c/fcntl'
 import {close, read} from '../c/unistd'
 import {BUFSIZ} from '../c/stdio'
 
-let baseFetch = global['fetch']
+let baseFetch = global.fetch
 
 export default async function fetch(input, init) {
   if (typeof input === 'string') {

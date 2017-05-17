@@ -22,15 +22,15 @@ function call (name, filename, ...args) {
   return api[name].call(this, filename, ...args)
 }
 
-export const chmod = call.bind('chmod')
-export const chown = call.bind('chown')
-export const lstat = call.bind('lstat')
-export const stat = call.bind('stat')
-export const mknod = call.bind('mknod')
-export const open = call.bind('open')
-export const rename = call.bind('rename')
-export const link = call.bind('link')
-export const unlink = call.bind('unlink')
+export const chmod = call.bind(undefined, 'chmod')
+export const chown = call.bind(undefined, 'chown')
+export const lstat = call.bind(undefined, 'lstat')
+export const stat = call.bind(undefined, 'stat')
+export const mknod = call.bind(undefined, 'mknod')
+export const open = call.bind(undefined, 'open')
+export const rename = call.bind(undefined, 'rename')
+export const link = call.bind(undefined, 'link')
+export const unlink = call.bind(undefined, 'unlink')
 
 export function mount (source, destination) {
   mounts[source] = destination

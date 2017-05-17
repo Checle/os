@@ -1,5 +1,3 @@
-export * from './sys/record'
-
 export const STDIN_FILENO = 0
 export const STDOUT_FILENO = 1
 export const STDERR_FILENO = 2

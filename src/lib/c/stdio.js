@@ -1,6 +1,6 @@
 import * as fcntl from './fcntl'
 import * as unistd from './unistd'
-import {close, syscall, unlink} from './unistd'
+import {close, unlink} from './unistd'
 
 export const BUFSIZ = 1024
 export const EOF = Symbol('eof')

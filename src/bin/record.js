@@ -17,8 +17,9 @@ parser.addArgument('args', {metavar: 'argument', nargs: '*', help: 'command argu
 async function main () {
   let {command, args} = parser.parseArgs()
   let pid = await clone(() => execv(command, args))
+  let status = await waitpid(pid)
 
-  await waitpid(pid)
+  return status
 }
 
-main()
+export default main()

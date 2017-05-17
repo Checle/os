@@ -1,8 +1,11 @@
 import * as path from 'path'
+import Namespace from './namespace.js'
+import {IDMap} from '../utils/pool.js'
 import {Zone} from '@record/zone'
-import Namespace from './namespace'
 
 export default class Process extends Zone {
+  static current = null
+
   cwd
   path
   api
@@ -31,13 +34,24 @@ export default class Process extends Zone {
 
     this.parent = parent
     this.api = Object.create(this.namespace.api)
-    this.api.process = this
   }
 
   terminate (status) {
     this.cancel()
 
     this.namespace.processes.delete(this.id)
+  }
+
+  run () {
+    let previous = Process.current
+
+    Process.current = this
+
+    try {
+      return super.run(...arguments)
+    } finally {
+      Process.current = previous
+    }
   }
 
   async syscall (id, ...args) {

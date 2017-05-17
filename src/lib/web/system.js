@@ -15,12 +15,11 @@ async function resolve (filename, path) {
 
 class SystemLoader extends RegisterLoader {
   async [RegisterLoader.resolve] (key, parent) {
-    let path = await getenv('IMPORTPATH')
-    let result = await resolve(key, path)
-
-    if (result !== undefined) return result
-
-    return super[RegisterLoader.resolve](key, parent)
+    try {
+      syscall('resolve', key, parent)
+    } catch (e) {
+      return super[RegisterLoader.resolve](key, parent)
+    }
   }
 
   async [RegisterLoader.instantiate] (key, processAnonRegister) {

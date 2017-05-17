@@ -1,3 +1,5 @@
+import {getpid} from './unistd.js'
+
 export const SIGHUP = 1
 export const SIGINT = 2
 export const SIGQUIT = 3
@@ -27,20 +29,10 @@ export const SIGPROF = 27
 export const SIGPOLL = 29
 export const SIGSYS = 31
 
-const defaultAction = {
-  handler (sig) {
-    Process.current.cancel()
-  }
-}
-
-export function raise (sig) {
-  return kill(Process.current.id, sig)
+export async function raise (sig) {
+  return kill(await getpid(), sig)
 }
 
 export function kill (pid, sig) {
-  const process = processes.get(pid)
-  if (!process) throw new Error('ESRCH')
-
-  const action = process.actions[sig] || defaultAction
-  action.handler(sig)
+  syscall('kill', pid, sig)
 }
