@@ -1,4 +1,4 @@
-import {sortedIndexOf} from '../utils'
+import {sortedIndexOf} from '../utils.js'
 
 export class Pool {
   free = []

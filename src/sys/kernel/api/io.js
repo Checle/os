@@ -1,5 +1,5 @@
 import Process from '../process.js'
-import {stat} from 'sys/stat.js'
+import {stat} from '../../../lib/libc.js'
 
 export async function access (path, amode) {
   let status = await stat(path)

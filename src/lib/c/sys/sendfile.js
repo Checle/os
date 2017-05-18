@@ -1,5 +1,6 @@
-import {BUFSIZ} from '../stdio'
-import {lseek, read, write, SEEK_SET} from '../unistd'
+import {BUFSIZ} from '../stdio.js'
+import {SEEK_SET} from '../stdio.js'
+import {lseek, read, write} from '../unistd.js'
 
 export async function sendfile (outFd, inFd, offset, count = Infinity) {
   let buffer = new ArrayBuffer(BUFSIZ)

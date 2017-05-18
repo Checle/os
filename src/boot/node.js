@@ -1,9 +1,10 @@
 import './node/polyfills.js'
 import * as path from 'path'
 import Process from '../sys/kernel/process.js'
+import System from '../lib/web/system.js'
 import vfs from './node/vfs.js'
-import {uselib} from 'unistd.js'
-import {getenv, setenv} from 'stdlib.js'
+import {getenv, setenv} from '../lib/c/stdlib.js'
+import {uselib} from '../lib/c/unistd.js'
 
 async function main () {
   process.on('unhandledRejection', (reason, promise) => { throw reason })
@@ -20,6 +21,7 @@ async function main () {
   })
 
   global.syscall = currentProcess.syscall.bind(currentProcess)
+  global.System = System
 
   await uselib(vfs)
 
@@ -33,7 +35,7 @@ async function main () {
 
   //process.cwd = '/usr/local' + process.cwd
 
-  return process
+  await System.import(path.join(root, 'boot.js'))
 }
 
 export default main()

@@ -1,10 +1,10 @@
-import {open, O_RDONLY} from '../c/fcntl'
-import {close, read} from '../c/unistd'
-import {BUFSIZ} from '../c/stdio'
+import {open, O_RDONLY} from '../c/fcntl.js'
+import {close, read} from '../c/unistd.js'
+import {BUFSIZ} from '../c/stdio.js'
 
 let baseFetch = global.fetch
 
-export default async function fetch(input, init) {
+export async function fetch(input, init) {
   if (typeof input === 'string') {
     input = new Request(input)
   }
@@ -26,3 +26,5 @@ export default async function fetch(input, init) {
 
   return new Response(new Blob(buffers))
 }
+
+export default fetch

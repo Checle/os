@@ -1,4 +1,3 @@
-import * as path from 'path'
 import Namespace from './namespace.js'
 import {IDMap} from '../utils/pool.js'
 import {Zone} from '@record/zone'

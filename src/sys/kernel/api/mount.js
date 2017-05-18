@@ -34,16 +34,16 @@ function createFunction (name) {
   }
 }
 
-export const chmod = createFunction('chmod')
-export const chown = createFunction('chown')
-export const lstat = createFunction('lstat')
-export const stat = createFunction('stat')
-export const mknod = createFunction('mknod')
-export const open = createFunction('open')
-export const rename = createFunction('rename')
-export const link = createFunction('link')
-export const unlink = createFunction('unlink')
-export const realpath = createFunction('realpath')
+export var chmod = createFunction('chmod')
+export var chown = createFunction('chown')
+export var lstat = createFunction('lstat')
+export var stat = createFunction('stat')
+export var mknod = createFunction('mknod')
+export var open = createFunction('open')
+export var rename = createFunction('rename')
+export var link = createFunction('link')
+export var unlink = createFunction('unlink')
+export var realpath = createFunction('realpath')
 
 export function mount (source, destination) {
   mounts[destination] = source

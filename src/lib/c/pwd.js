@@ -1,6 +1,6 @@
-import {BUFSIZ} from './stdio'
-import {open} from './fcntl'
-import {read, close} from './unistd'
+import {BUFSIZ} from './stdio.js'
+import {open} from './fcntl.js'
+import {read, close} from './unistd.js'
 
 export const GID_ROOT = 0
 export const GID_BIN = 1

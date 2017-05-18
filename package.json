@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/checle/os",
   "devDependencies": {
+    "babel-preset-node6": "^11.0.0",
     "eslint": "^3.19.0",
     "eslint-config-standard": "^10.2.1",
     "rollup-plugin-babel": "^2.7.1",
@@ -40,6 +41,7 @@
     "tap-spec": "^4.1.1"
   },
   "dependencies": {
+    "@record/node-module-loader": "^0.1.0",
     "@record/web-assembly": "^0.7.2",
     "@record/zone": "^0.5.0",
     "argparse": "^1.0.9",
@@ -51,7 +53,6 @@
     "babel-preset-es2015": "^3.0.0",
     "babel-preset-es2016": "^6.24.1",
     "babel-preset-es2017": "^6.24.1",
-    "babel-preset-node6": "^11.0.0",
     "bashful": "^1.8.0",
     "dom-urls": "^1.1.0",
     "es-module-loader": "^2.1.5",

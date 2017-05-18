@@ -1,6 +1,6 @@
-import * as fcntl from './fcntl'
-import * as unistd from './unistd'
-import {close, unlink} from './unistd'
+import * as fcntl from './fcntl.js'
+import * as unistd from './unistd.js'
+import {close, unlink} from './unistd.js'
 
 export const BUFSIZ = 1024
 export const EOF = Symbol('eof')

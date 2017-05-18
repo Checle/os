@@ -1,10 +1,7 @@
-import * as unistd from 'unistd.js'
+import * as c from '../../lib/libc.js'
 import Process from './process.js'
-import {BUFSIZ} from 'stdio.js'
-import {access, X_OK} from 'unistd.js'
 import {instantiate} from '@record/web-assembly'
-import {open} from 'fcntl.js'
-import {realpath} from 'stdlib.js'
+import {access, open, realpath, BUFSIZ, X_OK} from '../../lib/libc.js'
 
 export * from './api/io.js'
 export * from './api/mount.js'
@@ -79,11 +76,10 @@ export function exit (status) {
 export async function execv (pathname, argv = []) {
   let process = Process.current
 
-  // POSIX requires any pathname containing a slash to be referenced to a local context
-  pathname = pathname.indexOf('/') === -1 ? pathname : './' + pathname
-
   // Resolve pathname against `PATH` and enable native module resolution such as filename extension
-  let filename = await resolve(pathname, null, Process.current.env.PATH)
+  // POSIX requires any pathname containing a slash to be referenced to a local context
+  let paths = pathname.indexOf('/') === -1 ? [Process.current.cwd] : Process.current.env.PATH.split(':')
+  let filename = await resolve(pathname, ...paths)
 
   await access(filename, X_OK)
 
@@ -160,7 +156,7 @@ export async function uselib (library) {
   if (typeof library === 'string') {
     library = await new Promise(resolve => {
       clone(async () => {
-        let filename = resolve(library, null, process.env.IMPORTPATH)
+        let filename = resolve(library, process.env.IMPORTPATH)
         let code = readfile(filename)
         let {module, instance} = await instantiate(code, process.scope)
 
@@ -215,18 +211,13 @@ export async function readfile (filename) {
   return read(fd)
 }
 
-export async function resolve (filename, base = null, path = null) {
-  if (base != null) throw 'Not implemented'
+export async function resolve (filename, ...paths) {
+  if (paths.length === 0) paths.push(Process.current.cwd)
+  if (filename[0] === '/') paths = ['']
 
-  try {
-    return await realpath(filename)
-  } finally {
-    let paths = path ? path.split(':') : []
-
-    for (let dirname of paths) {
-      try {
-        return await realpath(dirname + '/' + filename)
-      } catch (error) { }
-    }
+  for (let dirname of paths) {
+    try {
+      return await realpath(dirname + '/' + filename)
+    } catch (error) { }
   }
 }
