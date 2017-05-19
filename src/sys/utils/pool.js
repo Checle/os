@@ -24,7 +24,7 @@ export class Pool {
 }
 
 export class IDPool extends Pool {
-  id = 0
+  id = 1
 
   create () {
     return this.id++

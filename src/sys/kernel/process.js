@@ -1,4 +1,5 @@
 import Namespace from './namespace.js'
+import {ENOTSUP} from './errors.js'
 import {IDMap} from '../utils/pool.js'
 import {Zone} from '@record/zone'
 
@@ -6,11 +7,11 @@ export default class Process extends Zone {
   static current = new Process()
 
   cwd
-  path
   api
   files
   result
   env
+  root
 
   arguments = null
   scope = null
@@ -26,12 +27,14 @@ export default class Process extends Zone {
       this.gid = parent.gid
       this.files = new IDMap(parent.files)
       this.env = Object.assign({}, parent.env)
+      this.root = parent.root
     } else {
       this.namespace = new Namespace()
       this.files = new IDMap()
       this.uid = 0
       this.gid = 0
       this.env = {}
+      this.root = ''
     }
 
     this.parent = parent
@@ -65,7 +68,7 @@ export default class Process extends Zone {
     let target = api[id]
 
     if (typeof target !== 'function') {
-      throw new Error('ENOTSUP')
+      throw ENOTSUP
     }
 
     return target.apply(api, args)

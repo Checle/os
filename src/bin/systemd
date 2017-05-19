@@ -1,1 +1,8 @@
-System.import('./systemd.js')
+'use strict'
+
+System.register(['./systemd.js'], function () {
+  return {
+    setters: [],
+    execute: function () {},
+  }
+})

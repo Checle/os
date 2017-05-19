@@ -1,6 +1,7 @@
 export * from './c/dirent.js'
 export * from './c/dlfcn.js'
 export * from './c/fcntl.js'
+export * from './c/libgen.js'
 export * from './c/pwd.js'
 export * from './c/signal.js'
 export * from './c/stddef.js'

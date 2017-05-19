@@ -1,8 +1,8 @@
 #!/usr/bin/node
-let Loader = require('@record/node-module-loader')
+let Loader = require('@record/node-module-loader').default
 let loader = new Loader()
 
 loader.import('../dist/boot/node.js').then(
-  boot => boot.default.then(
+  boot => boot.default().then(
     () => System.import('unistd.js').then(
-      unistd => unistd.exec('record'))))
+      unistd => unistd.execl('record'))))

@@ -1,4 +1,4 @@
-export {branch, clone, uselib} from './sys/record.js'
+export {branch, chroot, clone, uselib} from './sys/record.js'
 
 export const STDIN_FILENO = 0
 export const STDOUT_FILENO = 1
@@ -132,6 +132,10 @@ export function execve (path, argv = [], env) {
   if (env) environ = Object.assign({}, env)
 
   return execv(path, argv)
+}
+
+export function execvp (pathname, argv = []) {
+  return syscall('execvp', ...arguments)
 }
 
 export function execl (path, ...args) {

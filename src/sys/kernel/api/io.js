@@ -11,7 +11,7 @@ export async function access (path, amode) {
       if (mode & amode) return
     }
 
-    mode >>= 8
+    mode >>= 3
   }
 
   throw new Error('EACCES')

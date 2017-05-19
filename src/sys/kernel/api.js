@@ -1,7 +1,7 @@
-import * as c from '../../lib/libc.js'
+import * as libc from '../../lib/libc.js'
 import Process from './process.js'
 import {instantiate} from '@record/web-assembly'
-import {access, open, realpath, BUFSIZ, X_OK} from '../../lib/libc.js'
+import {access, close, open, read, realpath, X_OK} from '../../lib/libc.js'
 
 export * from './api/io.js'
 export * from './api/mount.js'
@@ -36,6 +36,20 @@ export function getcwd () {
   return Process.current.cwd
 }
 
+export async function chdir (path) {
+  path = await libc.realpath(path)
+
+  Process.current.cwd = path
+}
+
+export async function chroot (path) {
+  if (Process.current.uid !== 0) throw new Error('EPERM')
+
+  path = Process.current.root + await libc.realpath(path)
+
+  Process.current.root = path
+}
+
 export function getenv (name) {
   let env = Process.current.env
 
@@ -50,12 +64,6 @@ export function setenv (envname, envval, overwrite = true) {
   if (env.hasOwnProperty(envname) && !overwrite) return
 
   env[envname] = envval
-}
-
-export async function chdir (path) {
-  path = await realpath(path)
-
-  Process.current.cwd = path
 }
 
 export function clone (fn, thisArg, flags, ...args) {
@@ -73,21 +81,36 @@ export function exit (status) {
   return new Promise(() => null)
 }
 
-export async function execv (pathname, argv = []) {
+export async function readfile (filename) {
+  let fd = await open(filename)
+
+  try {
+    return await read(fd)
+  } finally {
+    await close(fd)
+  }
+}
+
+export async function execvp (pathname, argv = []) {
+  // Resolve pathname against `PATH`
+  // POSIX requires any pathname containing a slash to be referenced to a local context
+  let paths = pathname.indexOf('/') === -1 ? Process.current.cwd : Process.current.env.PATH
+
+  pathname = await resolve(pathname, paths)
+
+  return await execv(pathname, argv)
+}
+
+export async function execv (path, argv = []) {
   let process = Process.current
 
-  // Resolve pathname against `PATH` and enable native module resolution such as filename extension
-  // POSIX requires any pathname containing a slash to be referenced to a local context
-  let paths = pathname.indexOf('/') === -1 ? [Process.current.cwd] : Process.current.env.PATH.split(':')
-  let filename = await resolve(pathname, ...paths)
+  await access(path, X_OK)
 
-  await access(filename, X_OK)
-
-  process.path = filename
+  process.path = path
   process.arguments = argv.slice()
 
-  let code = await readfile(filename)
-  let importObject = Object.create(Process.current.scope)
+  let code = await readfile(path)
+  let importObject = Process.current.scope
   let match = /^#!(.*?)(?: (.*))\n/.exec(code)
 
   // Interpret shebang
@@ -96,8 +119,6 @@ export async function execv (pathname, argv = []) {
 
     return execv(interpreter, [optionalArg, ...argv])
   }
-
-  Object.assign(importObject, {})
 
   let {module, instance} = await instantiate(code, importObject)
   let exports = instance.exports
@@ -173,51 +194,20 @@ export async function uselib (library) {
   Object.assign(process.api, library)
 }
 
-export async function read (fildes, buf, nbyte) {
-  if (buf != null) {
-    return unistd.read(fildes, buf, nbyte == null ? buf.length : nbyte)
-  }
-
-  let decoder = new TextDecoder('utf-8')
-  let buffers = []
-  let length = 0
-
-  do {
-    let buffer = new Uint8Array(nbyte == null ? BUFSIZ : Math.min(BUFSIZ, nbyte - length))
-    let n = await read(fildes, buffer)
-
-    if (n <= 0) break
-
-    buffers.push(buffer.slice(0, n))
-
-    length += n
-  } while (nbyte == null || length < nbyte)
-
-  let array = new Uint8Array(length)
-  let i = 0
-
-  for (let buffer of buffers) {
-    array.set(buffer, i)
-
-    i += buffer.length
-  }
-
-  return decoder.decode(array)
-}
-
-export async function readfile (filename) {
-  let fd = await open(filename)
-
-  return read(fd)
-}
-
 export async function resolve (filename, ...paths) {
-  if (paths.length === 0) paths.push(Process.current.cwd)
-  if (filename[0] === '/') paths = ['']
+  if (filename[0] === '/') return await realpath(filename)
 
-  for (let dirname of paths) {
-    try {
-      return await realpath(dirname + '/' + filename)
-    } catch (error) { }
+  paths = paths.filter(value => value)
+
+  if (paths.length === 0) paths.push(Process.current.cwd)
+
+  for (let path of paths) {
+    if (path != null) {
+      for (let dirname of path.split(':')) {
+        try {
+          return await realpath(dirname + '/' + filename)
+        } catch (error) { }
+      }
+    }
   }
 }

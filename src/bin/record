@@ -1,1 +1,8 @@
-System.import('./record.js')
+'use strict'
+
+System.register(['./record.js'], function () {
+  return {
+    setters: [],
+    execute: function () {},
+  }
+})

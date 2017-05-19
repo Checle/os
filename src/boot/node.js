@@ -1,16 +1,20 @@
 import './node/polyfills.js'
+import * as System from 'systemjs'
 import * as path from 'path'
+import Loader from './node/loader'
+import createSystem from '../sys/kernel/system.js'
 import Process from '../sys/kernel/process.js'
-import System from '../lib/web/system.js'
 import vfs from './node/vfs.js'
-import {getenv, setenv} from '../lib/c/stdlib.js'
-import {uselib} from '../lib/c/unistd.js'
+import {URL} from '../lib/libweb.js'
+import {chroot, open, read, mount, unmount} from '../lib/libc.js'
 
 async function main () {
   process.on('unhandledRejection', (reason, promise) => { throw reason })
 
   let currentProcess = Process.current
   let api = currentProcess.api
+  let root = path.dirname(__dirname)
+  let System = createSystem(new Loader())
 
   Object.assign(currentProcess, {
     cwd: process.cwd(),
@@ -20,22 +24,24 @@ async function main () {
     scope: global,
   })
 
+  // Set up pseudo-process for basic APIs such as `fetch()`
   global.syscall = currentProcess.syscall.bind(currentProcess)
+  global.location = new URL('file://' + encodeURI(currentProcess.cwd))
   global.System = System
 
-  await uselib(vfs)
+  await mount(vfs, '/')
+  //await mount(path.resolve(root, '../node_modules'), path.join(root, 'usr/lib'))
+  await chroot(root)
+  await mount(vfs, '/usr/local')
 
-  let root = path.dirname(__dirname)
+  // Load Record FS driver
+  // On init: if DB non-existing, bootstrap - copy root folder recursively
 
-  await setenv('PATH', ['/bin', '/usr/bin'].map(path => root + path).join(':'))
-  await setenv('IMPORTPATH', ['/lib/c', '/lib/node'].map(path => root + path).join(':'))
+  currentProcess.cwd = '/usr/local' + Process.current.cwd
 
-  //api.mount(root, '/usr/local')
-  //api.mount('/', root)
+  let init = (await System.import('/boot/init.js')).default
 
-  //process.cwd = '/usr/local' + process.cwd
-
-  await System.import(path.join(root, 'boot.js'))
+  init()
 }
 
 export default main()

@@ -1,19 +1,24 @@
+import './browser/polyfills.js'
+import './system.js'
 import Process from '../sys/kernel/process.js'
+import init from './init.js'
+import {dirname} from '../lib/libc.js'
 
-let path = location.href.substr(0, location.href.length - location.hash.length)
+async function main () {
+  let path = decodeURI(location.pathname)
+  let cwd = dirname(path)
+  let process = Process.current
+  let api = process.api
 
-if (location.protocol === 'file:') {
-  path = decodeURIComponent(location.pathname)
+  Object.assign(process, {
+    cwd,
+    path,
+    scope: self,
+  })
+
+  self.syscall = process.syscall.bind(process)
+
+  await init()
 }
 
-let cwd = path.replace(/\/[^/]*$/, '')
-let process = Process.current
-let api = process.api
-
-Object.assign(process, {
-  cwd,
-  path,
-  scope: self,
-})
-
-self.syscall = process.syscall.bind(process)
+main()

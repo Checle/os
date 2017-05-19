@@ -55,6 +55,6 @@ for (let name of names) {
 }
 
 vfs['open'] = createFunction('open', (path, oflag, ...args) => [path, oflag == null ? 'r' : oflag, ...args])
-vfs['read'] = createFunction('read', (fildes, buf, nbyte) => [fildes, buf, 0, nbyte == null ? buf.length : nbyte, null])
+vfs['read'] = createFunction('read', (fildes, buf, nbyte) => [fildes, buf, 0, nbyte, null])
 
 export default vfs

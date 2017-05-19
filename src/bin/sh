@@ -1,1 +1,8 @@
-System.import('./sh.js')
+'use strict'
+
+System.register(['./sh.js'], function () {
+  return {
+    setters: [],
+    execute: function () {},
+  }
+})

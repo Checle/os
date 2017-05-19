@@ -1,13 +1,9 @@
-import * as program from 'commander'
-import pkg from '../../package.json'
 import {ArgumentParser} from 'argparse'
-import {clone, execv, waitpid} from '../lib/libc.js'
-
-let {version, description} = pkg
+import {clone, execvp, waitpid} from '../lib/libc.js'
 
 let parser = new ArgumentParser({
-  version,
-  description,
+  version: '0.0.1',
+  description: 'A 2017 OS',
   addHelp: true,
 })
 
@@ -16,7 +12,7 @@ parser.addArgument('args', {metavar: 'argument', nargs: '*', help: 'command argu
 
 async function main () {
   let {command, args} = parser.parseArgs()
-  let pid = await clone(() => execv(command, args))
+  let pid = await clone(() => execvp(command, args))
   let status = await waitpid(pid)
 
   return status

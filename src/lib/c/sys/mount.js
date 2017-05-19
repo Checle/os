@@ -1,1 +1,1 @@
-export {mount} from './record.js'
+export {mount, unmount} from './record.js'
