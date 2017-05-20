@@ -14,7 +14,9 @@ export default async function OS (...features) {
     options[feature] = true
   }
 
-  let process = await boot(options)
+  let process = new Process()
+
+  await process.run(() => boot(options))
 
   this[PROCESS] = process
 }

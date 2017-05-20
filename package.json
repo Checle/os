@@ -1,10 +1,10 @@
 {
-  "name": "@record/os",
+  "name": "standard-os",
   "version": "0.0.1",
   "description": "A 2017 OS",
   "main": "main.js",
   "bin": {
-    "record": "bin/record"
+    "standard": "bin/standard"
   },
   "scripts": {
     "prepublish": "npm run build",
