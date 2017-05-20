@@ -2,8 +2,7 @@
   "name": "@record/os",
   "version": "0.0.1",
   "description": "A 2017 OS",
-  "main": "dist/boot.js",
-  "directory": "dist/usr/lib/node",
+  "main": "main.js",
   "bin": {
     "record": "bin/record"
   },
