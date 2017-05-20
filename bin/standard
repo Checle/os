@@ -1,0 +1,17 @@
+#!/usr/bin/node
+const ArgumentParser = require('argparse').ArgumentParser
+const config = require('../package.json')
+
+let parser = new ArgumentParser({
+  version: config.version,
+  description: config.description,
+  addHelp: true,
+})
+
+parser.addArgument('--fs', {action: 'storeTrue', help: 'mount native file system'})
+parser.addArgument('--node', {action: 'storeTrue', help: 'bind NodeJS environment'})
+
+let options = parser.parseArgs()
+let os = new OS(options)
+
+os.execl('/bin/sh')
