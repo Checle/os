@@ -38,16 +38,9 @@ let lines
 export async function getpwent () {
   if (lines == null) {
     let fd = await open('/etc/passwd')
-    let buffer = new ArrayBuffer(BUFSIZ)
-    let buffers = []
+    let text = await read(fd)
 
-    while (await read(fd, buffer) > 0) {
-      buffers.push(buffer)
-    }
-
-    let content = buffers.join('')
-
-    lines = content.toString().split(/\r?\n/g).reverse()
+    lines = text.split(/\r?\n/g).reverse()
   }
 
   if (!lines.length) return null

@@ -1,13 +1,13 @@
 export function branch (path1, path2) {
-  return syscall('branch', ...arguments)
+  return syscall('branch', path1, path2)
 }
 
 export function mount (source, target) {
-  return syscall('mount', ...arguments)
+  return syscall('mount', source, target)
 }
 
 export function unmount (source, target) {
-  return syscall('unmount', ...arguments)
+  return syscall('unmount', source, target)
 }
 
 export async function uselib (library) {
@@ -15,9 +15,17 @@ export async function uselib (library) {
 }
 
 export function clone (fn, childStack, flags, ...args) {
-  return syscall('clone', ...arguments)
+  return syscall('clone', fn, childStack, flags, ...args)
 }
 
 export function chroot (path) {
-  return syscall('chroot', ...arguments)
+  return syscall('chroot', path)
+}
+
+export function getenc () {
+  return syscall('getenc')
+}
+
+export function setenc (encoding) {
+  return syscall('setenc', encoding)
 }

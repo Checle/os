@@ -1,9 +1,10 @@
-import {clone, execl, setenv, getcwd} from '../lib/libc.js'
+import Process from '../sys/kernel/process.js'
 
-export default async function main () {
-  await setenv('PATH', '/bin', '/usr/bin')
-  await setenv('IMPORTPATH', '/lib/web:/lib/c:/lib/node:/lib:/usr/lib:/usr/lib/node')
+export default async function init (options) {
+  let api = zone.process.api
 
-  // await clone(() => execl('/bin/systemd'))
-  System.import('/bin/record')
+  await api.setenv('PATH', '/bin', '/usr/bin')
+  await api.setenv('IMPORTPATH', '/lib/web:/lib/c:/lib/node:/lib:/usr/lib:/usr/lib/node')
+
+  api.clone(() => api.execv(options.init || '/bin/systemd'))
 }

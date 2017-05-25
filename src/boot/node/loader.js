@@ -6,7 +6,7 @@ export default class URLLoader extends PathLoader {
   async [Loader.resolve] (key, parent) {
     // TODO: resolve mount 
     if (key.substr(0, 8) === 'file:///') {
-      let pathname =Process.current.root +  decodeURIComponent(key.substr(7))
+      let pathname = zone.process.rootpath + decodeURIComponent(key.substr(7))
 
       // Check if module exists
       if (!await super[Loader.resolve](pathname)) return

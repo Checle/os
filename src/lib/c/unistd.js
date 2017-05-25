@@ -1,5 +1,10 @@
+import {BUFSIZ} from './stdio.js'
+
 export {branch, chroot, clone, uselib} from './sys/record.js'
 
+export const SEEK_CUR = 2
+export const SEEK_END = 3
+export const SEEK_SET = 1
 export const STDIN_FILENO = 0
 export const STDOUT_FILENO = 1
 export const STDERR_FILENO = 2
@@ -49,7 +54,9 @@ export function link (path1, path2) {
 }
 
 export function lseek (fildes, offset, whence) {
-  return syscall('lseek', ...arguments)
+  if (whence == null) whence = offset < 0 ? SEEK_END : SEEK_SET
+
+  return syscall('lseek', fildes, offset, whence)
 }
 
 export function mkdtemp (template) {
@@ -64,8 +71,41 @@ export function pwrite (fildes, buf, nbyte, offset) {
   return syscall('pwrite', ...arguments)
 }
 
-export function read (fildes, buf, nbyte) {
-  return syscall('read', ...arguments)
+export async function read (fildes, res, nbyte) {
+  if (res === undefined) res = await syscall('getenc')
+
+  if (res !== null && typeof res !== 'string') {
+    return syscall('read', fildes, res, nbyte == null ? res.length : nbyte)
+  }
+
+  let buffers = []
+  let length = 0
+
+  do {
+    let buffer = new Uint8Array(nbyte == null ? BUFSIZ : Math.min(BUFSIZ, nbyte - length))
+    let n = await read(fildes, buffer)
+
+    if (n <= 0) break
+
+    buffers.push(buffer.slice(0, n))
+
+    length += n
+  } while (nbyte == null || length < nbyte)
+
+  let array = new Uint8Array(length)
+  let i = 0
+
+  for (let buffer of buffers) {
+    array.set(buffer, i)
+
+    i += buffer.length
+  }
+
+  if (res === null) return array
+
+  let decoder = new TextDecoder(res)
+
+  return decoder.decode(array)
 }
 
 export function readlink (path) {

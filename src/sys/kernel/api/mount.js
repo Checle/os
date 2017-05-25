@@ -1,30 +1,29 @@
 import Process from '../process.js'
 import {SystemError} from '../errors.js'
 import {IDMap} from '../../utils/pool.js'
-import {basename, dirname, BUFSIZ} from '../../../lib/libc.js'
-import {resolve} from '../path.js'
+import {BUFSIZ} from '../../../lib/libc.js'
+import {resolve} from '../../utils/path.js'
 import {sortedIndexOf} from '../../utils.js'
 
-let points = []
-let mounts = {}
 let globalFDs = new IDMap()
 
 async function callTargetFunction (name, filename, ...args) {
-  let root = Process.current.root
+  let rootpath = zone.process.rootpath
+  let mounts = zone.process.namespace.mounts
 
-  filename = root + resolve(filename, Process.current.cwd)
+  filename = rootpath + resolve(filename, zone.process.cwd)
 
-  let index = sortedIndexOf(points, filename)
+  let index = mounts.indexOf(filename)
 
-  if (points.length > index && filename === points[index]) {
+  if (mounts.length > index && filename === mounts[index]) {
     return filename
   }
 
   if (index > 0) {
-    let point = points[index - 1]
+    let point = mounts[index - 1]
 
     if (filename.substr(0, point.length) === point && filename[point.length] === '/') {
-      let target = mounts[point]
+      let target = mounts.get(point)
       let path = filename.substr(point.length)
 
       if (typeof target[name] !== 'function') throw new SystemError('ENOTSUP')
@@ -33,8 +32,8 @@ async function callTargetFunction (name, filename, ...args) {
 
       if (typeof result === 'string') {
         // Return value is a filename
-        if (result.substr(0, root.length) === root && result[root.length] === '/') {
-          return result.substr(root.length)
+        if (result.substr(0, rootpath.length) === rootpath && result[rootpath.length] === '/') {
+          return result.substr(rootpath.length)
         } else {
           throw new SystemError('EACCES')
         }
@@ -82,44 +81,13 @@ export var realpath = callTargetFunction.bind(undefined, 'realpath')
 export var rename = callTargetFunction.bind(undefined, 'rename')
 export var stat = callTargetFunction.bind(undefined, 'stat')
 export var unlink = callTargetFunction.bind(undefined, 'unlink')
+export var read = callFileFunction.bind(undefined, 'read')
 export var write = callFileFunction.bind(undefined, 'write')
-
-export async function read (fildes, buf, nbyte) {
-  if (buf != null) {
-    return callFileFunction('read', fildes, buf, nbyte == null ? buf.length : nbyte)
-  }
-
-  let decoder = new TextDecoder('utf-8')
-  let buffers = []
-  let length = 0
-
-  do {
-    let buffer = new Uint8Array(nbyte == null ? BUFSIZ : Math.min(BUFSIZ, nbyte - length))
-    let n = await read(fildes, buffer)
-
-    if (n <= 0) break
-
-    buffers.push(buffer.slice(0, n))
-
-    length += n
-  } while (nbyte == null || length < nbyte)
-
-  let array = new Uint8Array(length)
-  let i = 0
-
-  for (let buffer of buffers) {
-    array.set(buffer, i)
-
-    i += buffer.length
-  }
-
-  return decoder.decode(array)
-}
 
 async function pointFor(path) {
   if (path === '/') return ''
 
-  path = Process.current.root + await realpath(path)
+  path = zone.process.rootpath + await realpath(path)
 
   if (path === '/') return ''
 
@@ -127,25 +95,21 @@ async function pointFor(path) {
 }
 
 export async function mount (target, path) {
-  if (Process.current.uid !== 0) throw new SystemError('EPERM')
+  if (zone.process.uid !== 0) throw new SystemError('EPERM')
 
+  let mounts = zone.process.namespace.mounts
   let point = await pointFor(path)
 
-  if (mounts.hasOwnProperty(point)) throw new SystemError('EBUSY')
+  if (mounts.has(point)) throw new SystemError('EBUSY')
 
-  points.splice(sortedIndexOf(points, point), 0, point)
-
-  mounts[point] = target
+  mounts.set(point, target)
 }
 
 export async function unmount (path) {
-  if (Process.current.uid !== 0) throw new SystemError('EPERM')
+  if (zone.process.uid !== 0) throw new SystemError('EPERM')
 
+  let mounts = zone.process.namespace.mounts
   let point = await pointFor(path)
 
-  if (!mounts.hasOwnProperty(point)) throw new SystemError('EINVAL')
-
-  delete mounts[point]
-
-  points.splice(sortedIndexOf(points, point), 1)
+  if (!mounts.delete(point)) throw new SystemError('EINVAL')
 }

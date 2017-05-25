@@ -1,24 +1,31 @@
 import Namespace from './namespace.js'
-import {ENOTSUP} from './errors.js'
+import {SystemError} from './errors.js'
 import {IDMap} from '../utils/pool.js'
-import {Zone} from '@record/zone'
+import {Zone} from '@checle/zones'
+
+const SYSCALL = Symbol('SYSCALL')
 
 export default class Process extends Zone {
-  static current = new Process()
-
-  cwd
   api
-  files
-  result
+  cwd
+  encoding
   env
-  root
+  files
+  gid
+  id
+  namespace
+  path
+  result
+  rootpath
+  uid
 
-  arguments = null
-  scope = null
   actions = []
+  arguments = null
+  loader = null
+  realm = null
 
   constructor (parent) {
-    super()
+    super('process')
 
     if (parent) {
       this.namespace = parent.namespace
@@ -27,18 +34,21 @@ export default class Process extends Zone {
       this.gid = parent.gid
       this.files = new IDMap(parent.files)
       this.env = Object.assign({}, parent.env)
-      this.root = parent.root
+      this.rootpath = parent.rootpath
     } else {
       this.namespace = new Namespace()
       this.files = new IDMap()
+      this.id = 0
       this.uid = 0
       this.gid = 0
       this.env = {}
-      this.root = ''
+      this.rootpath = ''
     }
 
+    this.process = this
     this.parent = parent
     this.api = Object.create(this.namespace.api)
+    this.encoding = this.namespace.encoding
   }
 
   terminate (status) {
@@ -47,19 +57,14 @@ export default class Process extends Zone {
     this.namespace.processes.delete(this.id)
   }
 
-  run () {
-    let previous = Process.current
+  enter (target) {
+    super.enter(target)
 
-    Process.current = this
-
-    try {
-      let result = super.run(...arguments)
-
-      this.result = result
-
-      return result
-    } finally {
-      Process.current = previous
+    if (target instanceof Process) {
+      zone[SYSCALL] = global.syscall
+      global.syscall = syscall
+    } else if (SYSCALL in target) {
+      global.syscall = target[SYSCALL]
     }
   }
 
@@ -68,9 +73,13 @@ export default class Process extends Zone {
     let target = api[id]
 
     if (typeof target !== 'function') {
-      throw ENOTSUP
+      throw new SystemError('ENOTSUP')
     }
 
     return target.apply(api, args)
   }
+}
+
+export function syscall () {
+  return zone.process.syscall(...arguments)
 }

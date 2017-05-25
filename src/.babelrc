@@ -1,5 +1,6 @@
 {
   "plugins": [
+    "transform-es2015-modules-systemjs",
     "transform-class-properties"
   ],
   "presets": ["node6"]

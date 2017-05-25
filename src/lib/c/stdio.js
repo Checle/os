@@ -3,19 +3,8 @@ import * as unistd from './unistd.js'
 import {close, unlink} from './unistd.js'
 
 export const BUFSIZ = 1024
-export const EOF = Symbol('eof')
-export const SEEK_CUR = 2
-export const SEEK_END = 3
-export const SEEK_SET = 1
+export const EOF = Symbol('EOF')
 export const TMP_MAX = Number.MAX_VALUE
-
-export default function* () {
-  let message = yield Message
-
-  yield Message('29')
-
-  return 2
-}
 
 let tmpcount = 0
 
