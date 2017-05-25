@@ -8,7 +8,7 @@ export default class VFS {
 
       return function (...args) {
         return new Promise((resolve, reject) => {
-          let callback = (error, value) => {
+            let callback = (error, value) => {
             if (error == null) resolve(value)
             else reject(error)
           }

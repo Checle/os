@@ -5,7 +5,7 @@ import {getcwd, getenv, realpath} from '../../lib/libc.js'
 
 export default new class extends Loader {
   async [Loader.resolve] (key, parent) {
-    let process = zone.process
+    let process = Process.current
 
     if (key.indexOf(':') === -1 && key[0] !== '.' && key[0] !== '/') {
       let filename = decodeURI(key)
@@ -25,7 +25,7 @@ export default new class extends Loader {
   }
 
   async [Loader.resolveInstantiate] (key, parent) {
-    let process = zone.process
+    let process = Process.current
 
     // TODO: avoid double resolve
 

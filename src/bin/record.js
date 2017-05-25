@@ -12,6 +12,9 @@ parser.addArgument('args', {metavar: 'argument', nargs: '*', help: 'command argu
 
 async function main () {
   let {command, args} = parser.parseArgs()
+
+  //process.argv = args
+
   let pid = await clone(() => execvp(command, args))
   let status = await waitpid(pid)
 

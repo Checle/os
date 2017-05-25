@@ -4,7 +4,9 @@ import Process from '../../sys/kernel/process.js'
 import init from '../init.js'
 
 export default async function boot (options) {
-  zone.process = new NodeProccess(options)
+  process.on('unhandledRejection', (reason, promise) => { throw reason })
 
-  await zone.process.run(() => init(options))
+  Process.current = new NodeProccess(options)
+
+  await Process.current.run(() => init(options))
 }

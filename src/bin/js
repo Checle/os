@@ -1,6 +1,6 @@
 'use strict'
 
-System.register(['./sh.js'], function () {
+System.register(['./js.js'], function () {
   return {
     setters: [],
     execute: function () {},

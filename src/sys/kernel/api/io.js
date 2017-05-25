@@ -6,7 +6,7 @@ export async function access (path, amode) {
   let mode = status.mode
 
   for (let key of keys) {
-    if (status[key] === zone.process[key]) {
+    if (status[key] === Process.current[key]) {
       if (mode & amode) return
     }
 

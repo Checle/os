@@ -47,7 +47,7 @@ export function normalize (filename, parentname) {
 
 /*
 function normalize (filename, parentname) {
-  filename = zone.process.cwd + filename
+  filename = Process.current.cwd + filename
 
   let input = filename.split('/')
   let output = []

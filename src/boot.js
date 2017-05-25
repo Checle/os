@@ -1,3 +1,5 @@
+import '@checle/zones'
+
 export default async function (options) {
   let boot
 

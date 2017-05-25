@@ -7,19 +7,19 @@ export * from './api/io.js'
 export * from './api/mount.js'
 
 export function getpid () {
-  return zone.process.id
+  return Process.current.id
 }
 
 export function getuid () {
-  return zone.process.uid
+  return Process.current.uid
 }
 
 export function getgid () {
-  return zone.process.gid
+  return Process.current.gid
 }
 
 export function setuid (uid) {
-  const process = zone.process
+  const process = Process.current
 
   if (process.uid !== 0) throw new Error('EPERM')
 
@@ -27,39 +27,39 @@ export function setuid (uid) {
 }
 
 export function setgid (gid) {
-  if (zone.process.uid !== 0) throw new Error('EPERM')
+  if (Process.current.uid !== 0) throw new Error('EPERM')
 
-  zone.process.gid = gid
+  Process.current.gid = gid
 }
 
 export function getcwd () {
-  return zone.process.cwd
+  return Process.current.cwd
 }
 
 export function getenc () {
-  return zone.process.encoding
+  return Process.current.encoding
 }
 
 export function setenc (encoding) {
-  zone.process.encoding = encoding
+  Process.current.encoding = encoding
 }
 
 export async function chdir (path) {
   path = await this.realpath(path)
 
-  zone.process.cwd = path
+  Process.current.cwd = path
 }
 
 export async function chroot (path) {
-  if (zone.process.uid !== 0) throw new Error('EPERM')
+  if (Process.current.uid !== 0) throw new Error('EPERM')
 
-  path = zone.process.rootpath + await this.realpath(path)
+  path = Process.current.rootpath + await this.realpath(path)
 
-  zone.process.rootpath = path
+  Process.current.rootpath = path
 }
 
 export function getenv (name) {
-  let env = zone.process.env
+  let env = Process.current.env
 
   if (!env.hasOwnProperty(name)) return null
 
@@ -67,7 +67,7 @@ export function getenv (name) {
 }
 
 export function setenv (envname, envval, overwrite = true) {
-  let env = zone.process.env
+  let env = Process.current.env
 
   if (env.hasOwnProperty(envname) && !overwrite) return
 
@@ -75,7 +75,7 @@ export function setenv (envname, envval, overwrite = true) {
 }
 
 export function clone (fn, thisArg, flags, ...args) {
-  let child = new Process(zone.process)
+  let child = new Process(Process.current)
 
   setTimeout(() => child.run(fn, thisArg, ...args), 0)
 
@@ -83,7 +83,7 @@ export function clone (fn, thisArg, flags, ...args) {
 }
 
 export function exit (status) {
-  zone.process.terminate(status || null)
+  Process.current.terminate(status || null)
 
   // Promise that does not resolve
   return new Promise(() => null)
@@ -102,32 +102,32 @@ export async function readfile (filename) {
 export async function execvp (pathname, argv = []) {
   // Resolve pathname against `PATH`
   // POSIX requires any pathname containing a slash to be referenced to a local context
-  let paths = pathname.indexOf('/') === -1 ? zone.process.cwd : zone.process.env.PATH
+  let paths = pathname.indexOf('/') === -1 ? Process.current.env.PATH : Process.current.cwd
 
-  pathname = await resolve(pathname, paths)
+  pathname = await this.resolve(pathname, paths)
 
-  return await execv(pathname, argv)
+  return await this.execv(pathname, argv)
 }
 
 export async function execv (path, argv = []) {
-  let process = zone.process
+  let process = Process.current
   let exports
 
   await this.access(path, X_OK)
 
   process.path = path
+  process.href = new URL(encodeURIComponent(path).replace(/%2F/g, '/'), 'file:///').href
   process.arguments = argv.slice()
 
-  let fd, magic
+  let fd = await this.open(path)
 
   try {
-    fd = await this.open(path)
-    magic = await read(fd, undefined, 2)
+    let magic = await read(fd, undefined, 2)
 
     if (magic === '#!') {
       let [interpreter, optionalArg] = /^(.*?)(?: (.*))?(?:\n|$)/.exec(await read(fd))
 
-      return execv(interpreter, [optionalArg, ...argv])
+      return this.execv(interpreter, [optionalArg, ...argv])
     }
 
     if (magic[0] === '\0') {
@@ -138,7 +138,7 @@ export async function execv (path, argv = []) {
 
       exports = instance.exports
     } else {
-      exports = await loader.import(new URL(encodeURIComponent(path), 'file:///').href)
+      exports = await process.import(process.href)
     }
   } finally {
     await this.close(fd)
@@ -149,7 +149,7 @@ export async function execv (path, argv = []) {
     let status = await exports.default(...argv)
 
     // Report exit code
-    exit(Number(status))
+    this.exit(Number(status))
   }
 
   // Promise that never resolves (see POSIX)
@@ -157,35 +157,35 @@ export async function execv (path, argv = []) {
 }
 
 export function dup (filedes) {
-  zone.process.files.add(zone.process.files.get(filedes))
+  Process.current.files.add(Process.current.files.get(filedes))
 }
 
 export function dup2 (filedes, filedes2) {
-  zone.process.files.set(filedes, zone.process.files.get(filedes))
+  Process.current.files.set(filedes, Process.current.files.get(filedes))
 }
 
 export function waitpid (pid, options) {
   return new Promise((resolve, reject) => {
-    let process = zone.process.namespace.processes.get(pid)
+    let process = Process.current.namespace.processes.get(pid)
 
     if (!process) reject(new Error('ECHILD'))
 
-    process.then(status => resolve(status), error => reject(error))
+    process.addEventListener('finish', event => resolve(process.status))
   })
 }
 
 let defaultAction = {
   handler: sig => {
-    zone.process.cancel()
+    Process.current.cancel()
   }
 }
 
 export function kill (pid, sig) {
-  let process = zone.process.namespace.processes.get(pid)
+  let process = Process.current.namespace.processes.get(pid)
 
   if (!process) throw new Error('ESRCH')
 
-  let action = zone.process.actions[sig] || defaultAction
+  let action = Process.current.actions[sig] || defaultAction
 
   action.handler(sig)
 }
@@ -193,13 +193,13 @@ export function kill (pid, sig) {
 export async function uselib (library) {
   // TODO: also freeze and add to global import loader registry
 
-  let process = zone.process
+  let process = Process.current
 
   if (process.uid !== 0) throw new Error('EPERM')
 
   if (typeof library === 'string') {
     library = await new Promise(resolve => {
-      clone(async () => {
+      this.clone(async () => {
         let filename = resolve(library, process.env.IMPORTPATH)
         let code = this.readfile(filename)
         let {module, instance} = await instantiate(code, process.scope)
@@ -222,7 +222,7 @@ export async function resolve (filename, ...paths) {
 
   paths = paths.filter(value => value)
 
-  if (paths.length === 0) paths.push(zone.process.cwd)
+  if (paths.length === 0) paths.push(Process.current.cwd)
 
   for (let path of paths) {
     if (path != null) {

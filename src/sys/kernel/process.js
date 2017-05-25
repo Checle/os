@@ -3,6 +3,7 @@ import {SystemError} from './errors.js'
 import {IDMap} from '../utils/pool.js'
 import {Zone} from '@checle/zones'
 
+const PROCESS = Symbol('PROCESS')
 const SYSCALL = Symbol('SYSCALL')
 
 export default class Process extends Zone {
@@ -15,7 +16,7 @@ export default class Process extends Zone {
   id
   namespace
   path
-  result
+  status
   rootpath
   uid
 
@@ -25,7 +26,7 @@ export default class Process extends Zone {
   realm = null
 
   constructor (parent) {
-    super('process')
+    super()
 
     if (parent) {
       this.namespace = parent.namespace
@@ -35,6 +36,7 @@ export default class Process extends Zone {
       this.files = new IDMap(parent.files)
       this.env = Object.assign({}, parent.env)
       this.rootpath = parent.rootpath
+      this.cwd = parent.cwd
     } else {
       this.namespace = new Namespace()
       this.files = new IDMap()
@@ -43,9 +45,10 @@ export default class Process extends Zone {
       this.gid = 0
       this.env = {}
       this.rootpath = ''
+      this.cwd = ''
     }
 
-    this.process = this
+    this.name = '<process ' + this.id + '>'
     this.parent = parent
     this.api = Object.create(this.namespace.api)
     this.encoding = this.namespace.encoding
@@ -55,17 +58,6 @@ export default class Process extends Zone {
     this.cancel()
 
     this.namespace.processes.delete(this.id)
-  }
-
-  enter (target) {
-    super.enter(target)
-
-    if (target instanceof Process) {
-      zone[SYSCALL] = global.syscall
-      global.syscall = syscall
-    } else if (SYSCALL in target) {
-      global.syscall = target[SYSCALL]
-    }
   }
 
   async syscall (id, ...args) {
@@ -78,8 +70,44 @@ export default class Process extends Zone {
 
     return target.apply(api, args)
   }
+
+  onenter () {
+    zone[PROCESS] = Process.current
+    zone[SYSCALL] = global.syscall
+    Process.current = this
+    global.syscall = syscall
+  }
+
+  onleave () {
+    Process.current = zone[PROCESS]
+    global.syscall = zone[SYSCALL]
+    delete zone[PROCESS]
+    delete zone[SYSCALL]
+  }
+
+  async import (key) {
+    if (key.indexOf(':') === -1 && key[0] !== '.' && key[0] !== '/') {
+      let filename = decodeURI(key)
+
+      filename = await resolve(filename, this.env.IMPORTPATH)
+
+      // Encodes special chars such as '#'
+      return 'file://' + encodeURIComponent(filename.substr(rootpath.length)).replace(/%2F/, '/')
+    }
+
+    // Otherwise, key is a valid URL input
+    key = new URL(key, 'file://' + location.href).href
+
+    if (this.loader != null) {
+      let resolvedKey = await this.loader.resolve(key, this.href)
+
+      if (resolvedKey) return this.loader.import(resolvedKey)
+    }
+
+    return this.namespace.loader.import(key)
+  }
 }
 
 export function syscall () {
-  return zone.process.syscall(...arguments)
+  return Process.current.syscall(...arguments)
 }

@@ -8,10 +8,10 @@ import {sortedIndexOf} from '../../utils.js'
 let globalFDs = new IDMap()
 
 async function callTargetFunction (name, filename, ...args) {
-  let rootpath = zone.process.rootpath
-  let mounts = zone.process.namespace.mounts
+  let rootpath = Process.current.rootpath
+  let mounts = Process.current.namespace.mounts
 
-  filename = rootpath + resolve(filename, zone.process.cwd)
+  filename = rootpath + resolve(filename, Process.current.cwd)
 
   let index = mounts.indexOf(filename)
 
@@ -87,7 +87,7 @@ export var write = callFileFunction.bind(undefined, 'write')
 async function pointFor(path) {
   if (path === '/') return ''
 
-  path = zone.process.rootpath + await realpath(path)
+  path = Process.current.rootpath + await realpath(path)
 
   if (path === '/') return ''
 
@@ -95,9 +95,9 @@ async function pointFor(path) {
 }
 
 export async function mount (target, path) {
-  if (zone.process.uid !== 0) throw new SystemError('EPERM')
+  if (Process.current.uid !== 0) throw new SystemError('EPERM')
 
-  let mounts = zone.process.namespace.mounts
+  let mounts = Process.current.namespace.mounts
   let point = await pointFor(path)
 
   if (mounts.has(point)) throw new SystemError('EBUSY')
@@ -106,9 +106,9 @@ export async function mount (target, path) {
 }
 
 export async function unmount (path) {
-  if (zone.process.uid !== 0) throw new SystemError('EPERM')
+  if (Process.current.uid !== 0) throw new SystemError('EPERM')
 
-  let mounts = zone.process.namespace.mounts
+  let mounts = Process.current.namespace.mounts
   let point = await pointFor(path)
 
   if (!mounts.delete(point)) throw new SystemError('EINVAL')
