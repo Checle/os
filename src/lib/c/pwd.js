@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/pwd.h.html
+
 import {BUFSIZ} from './stdio.js'
 import {open} from './fcntl.js'
 import {read, close} from './unistd.js'

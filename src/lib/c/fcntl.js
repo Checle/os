@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/fcntl.h.html
+
 export const F_DUPFD = 1
 export const F_DUPFD_CLOEXEC = 2
 export const F_GETFD = 3

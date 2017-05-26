@@ -1,7 +1,7 @@
+import {syscall} from './api.js'
 import Namespace from './namespace.js'
-import {SystemError} from './errors.js'
 import {IDMap} from '../utils/pool.js'
-import {Zone} from '@checle/zones'
+import {Zone} from 'web-zones'
 
 const PROCESS = Symbol('PROCESS')
 const SYSCALL = Symbol('SYSCALL')
@@ -17,13 +17,13 @@ export default class Process extends Zone {
   namespace
   path
   status
-  rootpath
+  root
   uid
 
   actions = []
   arguments = null
-  loader = null
   realm = null
+  system = null
 
   constructor (parent) {
     super()
@@ -35,7 +35,7 @@ export default class Process extends Zone {
       this.gid = parent.gid
       this.files = new IDMap(parent.files)
       this.env = Object.assign({}, parent.env)
-      this.rootpath = parent.rootpath
+      this.root = parent.root
       this.cwd = parent.cwd
     } else {
       this.namespace = new Namespace()
@@ -44,7 +44,7 @@ export default class Process extends Zone {
       this.uid = 0
       this.gid = 0
       this.env = {}
-      this.rootpath = ''
+      this.root = ''
       this.cwd = ''
     }
 
@@ -60,15 +60,8 @@ export default class Process extends Zone {
     this.namespace.processes.delete(this.id)
   }
 
-  async syscall (id, ...args) {
-    let api = this.api
-    let target = api[id]
-
-    if (typeof target !== 'function') {
-      throw new SystemError('ENOTSUP')
-    }
-
-    return target.apply(api, args)
+  spawn () {
+    return this.appendChild(new Process(this))
   }
 
   onenter () {
@@ -85,29 +78,12 @@ export default class Process extends Zone {
     delete zone[SYSCALL]
   }
 
-  async import (key) {
-    if (key.indexOf(':') === -1 && key[0] !== '.' && key[0] !== '/') {
-      let filename = decodeURI(key)
+  onfinish () {
+    if (!this.parentNode) return
 
-      filename = await resolve(filename, this.env.IMPORTPATH)
-
-      // Encodes special chars such as '#'
-      return 'file://' + encodeURIComponent(filename.substr(rootpath.length)).replace(/%2F/, '/')
+    // Adopt children by parent process
+    for (let child of this.childNodes) {
+      this.parentNode.appendChild(child)
     }
-
-    // Otherwise, key is a valid URL input
-    key = new URL(key, 'file://' + location.href).href
-
-    if (this.loader != null) {
-      let resolvedKey = await this.loader.resolve(key, this.href)
-
-      if (resolvedKey) return this.loader.import(resolvedKey)
-    }
-
-    return this.namespace.loader.import(key)
   }
-}
-
-export function syscall () {
-  return Process.current.syscall(...arguments)
 }

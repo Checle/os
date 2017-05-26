@@ -29,3 +29,15 @@ export function getenc () {
 export function setenc (encoding) {
   return syscall('setenc', encoding)
 }
+
+export function evaluate () {
+  return syscall('evaluate')
+}
+
+export function resolve (key, parent) {
+  return syscall('resolve', key, parent)
+}
+
+export function instantiate (key, parent) {
+  return syscall('instantiate', key, parent)
+}

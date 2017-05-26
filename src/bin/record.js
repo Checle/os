@@ -7,14 +7,11 @@ let parser = new ArgumentParser({
   addHelp: true,
 })
 
-parser.addArgument('command', {metavar: 'command', nargs: '?', help: 'command to execute', defaultValue: 'sh'})
+parser.addArgument('command', {metavar: 'command', nargs: '?', help: 'command to execute', defaultValue: 'js'})
 parser.addArgument('args', {metavar: 'argument', nargs: '*', help: 'command arguments'})
 
 async function main () {
   let {command, args} = parser.parseArgs()
-
-  //process.argv = args
-
   let pid = await clone(() => execvp(command, args))
   let status = await waitpid(pid)
 

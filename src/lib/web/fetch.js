@@ -12,7 +12,9 @@ export async function fetch(input, init) {
 
   url = new URL(url, location.href)
 
-  if (url.protocol !== 'file:') return baseFetch(input, init) // TODO: implement on Record FS eventually
+  if (url.protocol !== 'file:') {
+    return baseFetch(input, init) // TODO: implement on Record FS eventually
+  }
 
   let pathname = decodeURI(url.pathname)
   let fd = await open(pathname)

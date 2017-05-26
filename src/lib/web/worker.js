@@ -1,6 +1,6 @@
 // https://w3c.github.io/workers/
 
-let urls = new WeakMap()
+import {Console} from './console.js'
 
 export class WorkerLocation {
   constructor (href) {
@@ -52,11 +52,11 @@ export class WorkerGlobalScope {
   location
   self
 
-  constructor (url) {
+  constructor (href) {
     Object.defineProperties(this, {
-      self: {value: this, configurable: true},
-      location: {value: new WorkerLocation(url), configurable: true},
-      console: {value: new Console(), configurable: true},
+      self: {value: this},
+      location: {value: new WorkerLocation(href)},
+      console: {value: new Console()},
     })
   }
 }

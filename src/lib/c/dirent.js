@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html
+
 export function opendir (dirname) {
   return syscall('opendir', ...arguments)
 }

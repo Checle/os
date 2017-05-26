@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/libgen.h.html
+
 export function dirname (path) {
   return path.replace(/[^/]+$/, '')
 }

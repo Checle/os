@@ -1,8 +1,11 @@
+import * as libc from '../lib/libc.js'
+import * as libweb from '../lib/libweb.js'
+import * as babel from 'babel-core'
 import * as repl from 'repl'
+import * as util from 'util'
 import {ArgumentParser} from 'argparse'
 import {instantiate} from '@record/web-assembly'
 import {rollup} from 'rollup'
-import {transform} from 'babel-core'
 import {writeFileSync} from 'fs'
 
 let parser = new ArgumentParser({
@@ -18,7 +21,7 @@ parser.addArgument(['-C', '--no-compress'], {action: 'storeFalse', dest: 'compre
 parser.addArgument(['-X', '--no-exec'], {action: 'storeFalse', dest: 'execute', help: 'do not execute and do not mark output files executable'})
 parser.addArgument(['--std'], {metavar: 'format', help: 'set input source language or get supported'})
 
-async function process (filename) {
+async function transform (filename) {
   let bundle = await rollup({
     entry: filename,
 
@@ -34,31 +37,52 @@ async function process (filename) {
 
   code = code.replace(/^#!.*\n/, '')
 
-  return transform(code, {
+  return babel.transform(code, {
     babelrc: false,
     plugins: ['transform-es2015-modules-systemjs', 'transform-class-properties'],
     presets: ['es2017', 'es2016', 'es2015', 'babili'],
   })
 }
 
+function completer(line) {
+  let completions = Object.keys(libc).concat(Object.keys(libweb), Object.keys(global)).sort()
+  let hits = completions.filter(c => c.indexOf(line) === 0)
+
+  return [hits, line];
+}
+
 async function main () {
   let options = parser.parseArgs()
   let {file, output, target, std} = options
 
+  let evaluate = new Function('with(arguments[0])with(arguments[1])return function(){return eval(arguments[0])}')(libc, libweb)
+
   if (file === null) {
-    /*
-    let {module, instance} = instantiate('callback(function(code){eval(code)})', {
-      callback (evaluate) {
-        repl.start({prompt: '> ', eval: evaluate})
-      }
+    let rs = repl.start({
+      prompt: '> ',
+      completer,
+      writer: util.inspect,
+      terminal: true,
+      useColors: true,
+
+      eval: (code, ...args) => {
+        let callback = args.pop()
+        let result = evaluate(code)
+
+        if (result != null && typeof result.then === 'function') {
+          result.then(value => callback(null, value), error => callback(error))
+          return
+        }
+
+        callback(null, result)
+      },
     })
-    */
-    repl.start({prompt: '> '})
+
 
     return
   }
 
-  let {code, ast} = await process(file)
+  let {code, ast} = await transform(file)
 
   if (output === null) {
     let fn = new Function(code)

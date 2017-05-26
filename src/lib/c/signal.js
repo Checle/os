@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html
+
 import {getpid} from './unistd.js'
 
 export const SIGHUP = 1

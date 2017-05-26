@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/unistd.h.html
+
 import {BUFSIZ} from './stdio.js'
 
 export {branch, chroot, clone, uselib} from './sys/record.js'

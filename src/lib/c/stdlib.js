@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/stdlib.h.html
+
 export {getenc, setenc} from './sys/record.js'
 
 export function exit (status) {

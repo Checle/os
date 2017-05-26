@@ -8,7 +8,7 @@ import {sortedIndexOf} from '../../utils.js'
 let globalFDs = new IDMap()
 
 async function callTargetFunction (name, filename, ...args) {
-  let rootpath = Process.current.rootpath
+  let rootpath = Process.current.root
   let mounts = Process.current.namespace.mounts
 
   filename = rootpath + resolve(filename, Process.current.cwd)
@@ -58,7 +58,7 @@ async function callFileFunction (name, globalFD, ...args) {
 
   if (typeof target[name] !== 'function') throw new SystemError('ENOTSUP')
 
-  return target[name].call(this, fd, ...args)
+  return target[name](fd, ...args)
 }
 
 async function callCloseFunction (name, globalFD, ...args) {
@@ -74,6 +74,7 @@ export var chown = callTargetFunction.bind(undefined, 'chown')
 export var close = callCloseFunction.bind(undefined, 'close')
 export var creat = callTargetFunction.bind(undefined, 'creat')
 export var link = callTargetFunction.bind(undefined, 'link')
+export var lseek = callFileFunction.bind(undefined, 'lseek')
 export var lstat = callTargetFunction.bind(undefined, 'lstat')
 export var mknod = callTargetFunction.bind(undefined, 'mknod')
 export var open = callTargetFunction.bind(undefined, 'open')
@@ -87,7 +88,7 @@ export var write = callFileFunction.bind(undefined, 'write')
 async function pointFor(path) {
   if (path === '/') return ''
 
-  path = Process.current.rootpath + await realpath(path)
+  path = Process.current.root + await realpath(path)
 
   if (path === '/') return ''
 

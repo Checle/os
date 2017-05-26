@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/stdio.h.html
+
 import * as fcntl from './fcntl.js'
 import * as unistd from './unistd.js'
 import {close, unlink} from './unistd.js'

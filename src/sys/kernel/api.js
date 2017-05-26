@@ -1,10 +1,23 @@
 import * as libc from '../../lib/libc.js'
 import Process from './process.js'
-import loader from './loader.js'
-import {read, X_OK} from '../../lib/libc.js'
+import SystemLoader from './loader.js'
+import {read, SEEK_SET, X_OK} from '../../lib/libc.js'
+import {SystemError} from './errors.js'
+import {WorkerGlobalScope} from '../../lib/libweb.js'
 
 export * from './api/io.js'
 export * from './api/mount.js'
+
+export function syscall (id, ...args) {
+  let api = Process.current.api
+  let target = api[id]
+
+  if (typeof target !== 'function') {
+    throw new SystemError('ENOTSUP')
+  }
+
+  return target.apply(api, args)
+}
 
 export function getpid () {
   return Process.current.id
@@ -53,9 +66,9 @@ export async function chdir (path) {
 export async function chroot (path) {
   if (Process.current.uid !== 0) throw new Error('EPERM')
 
-  path = Process.current.rootpath + await this.realpath(path)
+  path = Process.current.root + await this.realpath(path)
 
-  Process.current.rootpath = path
+  Process.current.root = path
 }
 
 export function getenv (name) {
@@ -75,7 +88,8 @@ export function setenv (envname, envval, overwrite = true) {
 }
 
 export function clone (fn, thisArg, flags, ...args) {
-  let child = new Process(Process.current)
+  let process = Process.current
+  let child = process.spawn()
 
   setTimeout(() => child.run(fn, thisArg, ...args), 0)
 
@@ -99,6 +113,22 @@ export async function readfile (filename) {
   }
 }
 
+export async function instantiate (key, parent) {
+  let process = Process.current
+
+  if (process.uid === 0 && key[0] !== '.' && key[0] !== '/' && key.indexOf(':') === -1) {
+    if (typeof require === 'function') {
+      let exports = require(key)
+
+      if (typeof exports !== 'object') {
+        exports = {default: exports}
+      }
+
+      return exports
+    }
+  }
+}
+
 export async function execvp (pathname, argv = []) {
   // Resolve pathname against `PATH`
   // POSIX requires any pathname containing a slash to be referenced to a local context
@@ -115,14 +145,26 @@ export async function execv (path, argv = []) {
 
   await this.access(path, X_OK)
 
+  let href = new URL(encodeURIComponent(path).replace(/%2F/g, '/'), 'file:///').href
+  let endowments = new WorkerGlobalScope(href)
+  let system = new SystemLoader()
+
+  Object.defineProperty(endowments, 'System', {value: system})
+
+  process.system = system
+  process.realm = {
+    global,
+    eval: eval,
+  } // TODO: new Realm(endowments)
   process.path = path
-  process.href = new URL(encodeURIComponent(path).replace(/%2F/g, '/'), 'file:///').href
   process.arguments = argv.slice()
 
   let fd = await this.open(path)
 
   try {
     let magic = await read(fd, undefined, 2)
+
+    await this.lseek(fd, 0, SEEK_SET)
 
     if (magic === '#!') {
       let [interpreter, optionalArg] = /^(.*?)(?: (.*))?(?:\n|$)/.exec(await read(fd))
@@ -131,14 +173,12 @@ export async function execv (path, argv = []) {
     }
 
     if (magic[0] === '\0') {
-      await this.lseek(0)
-
       let buffer = await read(fd, null)
       let {module, instance} = await WebAssembly.instantiate(buffer, process.api)
 
       exports = instance.exports
     } else {
-      exports = await process.import(process.href)
+      exports = await system.import(path)
     }
   } finally {
     await this.close(fd)
@@ -190,6 +230,10 @@ export function kill (pid, sig) {
   action.handler(sig)
 }
 
+export function evaluate (code) {
+  return Process.current.realm.eval(code)
+}
+
 export async function uselib (library) {
   // TODO: also freeze and add to global import loader registry
 
@@ -202,7 +246,7 @@ export async function uselib (library) {
       this.clone(async () => {
         let filename = resolve(library, process.env.IMPORTPATH)
         let code = this.readfile(filename)
-        let {module, instance} = await instantiate(code, process.scope)
+        let {module, instance} = await WebAssembly.instantiate(code, process.scope)
 
         resolve(instance.exports)
       })
@@ -217,20 +261,17 @@ export async function uselib (library) {
   Object.assign(process.api, library)
 }
 
-export async function resolve (filename, ...paths) {
+export async function resolve (filename, paths, extensions = ['']) {
   if (filename[0] === '/') return await this.realpath(filename)
 
-  paths = paths.filter(value => value)
+  if (paths == null) paths.push(Process.current.cwd)
+  else if (typeof paths === 'string') paths = paths.split(':')
 
-  if (paths.length === 0) paths.push(Process.current.cwd)
-
-  for (let path of paths) {
-    if (path != null) {
-      for (let dirname of path.split(':')) {
-        try {
-          return await this.realpath(dirname + '/' + filename)
-        } catch (error) { }
-      }
+  for (let path of paths) if (path != null) {
+    for (let extension of extensions) {
+      try {
+        return await this.realpath(path + '/' + filename + extension)
+      } catch (error) { }
     }
   }
 }

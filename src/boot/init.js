@@ -6,5 +6,5 @@ export default async function init (options) {
   await api.setenv('PATH', '/bin', '/usr/bin')
   await api.setenv('IMPORTPATH', '/lib/web:/lib/c:/lib/node:/lib:/usr/lib:/usr/lib/node')
 
-  api.clone(() => api.execv(options.init || '/bin/systemd'))
+  api.clone(() => api.execv('/bin/systemd'))
 }

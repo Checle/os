@@ -1,4 +1,4 @@
-import '@checle/zones'
+import 'web-zones'
 
 export default async function (options) {
   let boot

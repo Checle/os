@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys/stat.h.html
+
 export const D_PERSISTENT = 1
 export const D_TEMPORARY = 2
 export const D_RECORD = 3

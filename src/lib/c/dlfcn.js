@@ -1,3 +1,5 @@
+// http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/dlfcn.h.html
+
 let handles = {}
 
 export async function dlopen (file, mode = 0) {
