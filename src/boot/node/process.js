@@ -5,13 +5,12 @@ import VFS from './vfs.js'
 
 export default class NodeProcess extends Process {
   cwd = process.cwd()
-  env = Object.assign({}, process.env)
+  env = {}
   arguments = process.argv.slice(2)
   path = process.execPath
 
   realm = {
     global,
-
     eval: eval,
   }
 

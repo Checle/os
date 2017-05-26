@@ -3,6 +3,7 @@ import * as libweb from '../lib/libweb.js'
 import * as babel from 'babel-core'
 import * as repl from 'repl'
 import * as util from 'util'
+import * as vm from 'vm'
 import {ArgumentParser} from 'argparse'
 import {instantiate} from '@record/web-assembly'
 import {rollup} from 'rollup'
@@ -44,33 +45,40 @@ async function transform (filename) {
   })
 }
 
-function completer(line) {
-  let completions = Object.keys(libc).concat(Object.keys(libweb), Object.keys(global)).sort()
-  let hits = completions.filter(c => c.indexOf(line) === 0)
-
-  return [hits, line];
-}
-
 async function main () {
   let options = parser.parseArgs()
   let {file, output, target, std} = options
+  let context = vm.createContext(Object.assign(Object.create(global), libc, libweb))
+  let names = Object.getOwnPropertyNames(vm.runInContext('this', context)).sort()
 
-  let evaluate = new Function('with(arguments[0])with(arguments[1])return function(){return eval(arguments[0])}')(libc, libweb)
+  function completer(line) {
+    let hits = names.filter(c => c.indexOf(line) === 0)
+
+    return [hits, line]
+  }
 
   if (file === null) {
     let rs = repl.start({
       prompt: '> ',
       completer,
-      writer: util.inspect,
-      terminal: true,
-      useColors: true,
+      writer: object => util.inspect(object, {depth: 1, colors: true}),
 
       eval: (code, ...args) => {
         let callback = args.pop()
-        let result = evaluate(code)
+        let async = false
+        let script
+
+        try {
+          script = vm.createScript(code)
+        } catch (error) {
+          async = true
+          script = vm.createScript('(async()=>{return (v=>v)(\n' + code + '\n)})()')
+        }
+
+        let result = script.runInContext(context)
 
         if (result != null && typeof result.then === 'function') {
-          result.then(value => callback(null, value), error => callback(error))
+          result.then(value => callback(null, async ? value : result), error => callback(error))
           return
         }
 

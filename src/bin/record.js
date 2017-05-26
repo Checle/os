@@ -11,7 +11,16 @@ parser.addArgument('command', {metavar: 'command', nargs: '?', help: 'command to
 parser.addArgument('args', {metavar: 'argument', nargs: '*', help: 'command arguments'})
 
 async function main () {
-  let {command, args} = parser.parseArgs()
+  let command = process.argv[2]
+  let args = process.argv.slice(3)
+
+  if (process.argv.length < 3 || process.argv[2][0] === '-') {
+    let options = parser.parseArgs()
+
+    command = options.command
+    args = options.args
+  }
+
   let pid = await clone(() => execvp(command, args))
   let status = await waitpid(pid)
 

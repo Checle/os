@@ -177,7 +177,11 @@ export function execve (path, argv = [], env) {
 }
 
 export function execvp (pathname, argv = []) {
-  return syscall('execvp', ...arguments)
+  return syscall('execvp', pathname, argv)
+}
+
+export function execlp (pathname, ...args) {
+  return execvp(pathname, args)
 }
 
 export function execl (path, ...args) {
