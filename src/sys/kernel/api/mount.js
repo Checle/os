@@ -8,10 +8,10 @@ import {sortedIndexOf} from '../../utils.js'
 let globalFDs = new IDMap()
 
 async function callTargetFunction (name, filename, ...args) {
-  let rootpath = Process.current.root
-  let mounts = Process.current.namespace.mounts
+  let rootpath = this.process.root
+  let mounts = this.process.namespace.mounts
 
-  filename = rootpath + resolve(filename, Process.current.cwd)
+  filename = rootpath + resolve(filename, this.process.cwd)
 
   let index = mounts.indexOf(filename)
 
@@ -62,33 +62,78 @@ async function callFileFunction (name, globalFD, ...args) {
 }
 
 async function callCloseFunction (name, globalFD, ...args) {
-  let result = await callFileFunction(...arguments)
+  let result = await callFileFunction.apply(this, arguments)
 
   if (!globalFDs.delete(globalFD)) throw new SystemError('EBADF')
 
   return result
 }
 
-export var chmod = callTargetFunction.bind(undefined, 'chmod')
-export var chown = callTargetFunction.bind(undefined, 'chown')
-export var close = callCloseFunction.bind(undefined, 'close')
-export var creat = callTargetFunction.bind(undefined, 'creat')
-export var link = callTargetFunction.bind(undefined, 'link')
-export var lseek = callFileFunction.bind(undefined, 'lseek')
-export var lstat = callTargetFunction.bind(undefined, 'lstat')
-export var mknod = callTargetFunction.bind(undefined, 'mknod')
-export var open = callTargetFunction.bind(undefined, 'open')
-export var realpath = callTargetFunction.bind(undefined, 'realpath')
-export var rename = callTargetFunction.bind(undefined, 'rename')
-export var stat = callTargetFunction.bind(undefined, 'stat')
-export var unlink = callTargetFunction.bind(undefined, 'unlink')
-export var read = callFileFunction.bind(undefined, 'read')
-export var write = callFileFunction.bind(undefined, 'write')
+export function chmod () {
+  return callTargetFunction.call(this, 'chmod', ...arguments)
+}
+
+export function chown () {
+  return callTargetFunction.call(this, 'chown', ...arguments)
+}
+
+export function close () {
+  return callCloseFunction.call(this, 'close', ...arguments)
+}
+
+export function creat () {
+  return callTargetFunction.call(this, 'creat', ...arguments)
+}
+
+export function link () {
+  return callTargetFunction.call(this, 'link', ...arguments)
+}
+
+export function lseek () {
+  return callFileFunction.call(this, 'lseek', ...arguments)
+}
+
+export function lstat () {
+  return callTargetFunction.call(this, 'lstat', ...arguments)
+}
+
+export function mknod () {
+  return callTargetFunction.call(this, 'mknod', ...arguments)
+}
+
+export function open () {
+  return callTargetFunction.call(this, 'open', ...arguments)
+}
+
+export function realpath () {
+  return callTargetFunction.call(this, 'realpath', ...arguments)
+}
+
+export function rename () {
+  return callTargetFunction.call(this, 'rename', ...arguments)
+}
+
+export function stat () {
+  return callTargetFunction.call(this, 'stat', ...arguments)
+}
+
+export function unlink () {
+  return callTargetFunction.call(this, 'unlink', ...arguments)
+}
+
+export function read () {
+  return callFileFunction.call(this, 'read', ...arguments)
+}
+
+export function write () {
+  return callFileFunction.call(this, 'write', ...arguments)
+}
+
 
 async function pointFor(path) {
   if (path === '/') return ''
 
-  path = Process.current.root + await realpath(path)
+  path = this.process.root + await realpath(path)
 
   if (path === '/') return ''
 
@@ -96,9 +141,9 @@ async function pointFor(path) {
 }
 
 export async function mount (target, path) {
-  if (Process.current.uid !== 0) throw new SystemError('EPERM')
+  if (this.process.uid !== 0) throw new SystemError('EPERM')
 
-  let mounts = Process.current.namespace.mounts
+  let mounts = this.process.namespace.mounts
   let point = await pointFor(path)
 
   if (mounts.has(point)) throw new SystemError('EBUSY')
@@ -107,9 +152,9 @@ export async function mount (target, path) {
 }
 
 export async function unmount (path) {
-  if (Process.current.uid !== 0) throw new SystemError('EPERM')
+  if (this.process.uid !== 0) throw new SystemError('EPERM')
 
-  let mounts = Process.current.namespace.mounts
+  let mounts = this.process.namespace.mounts
   let point = await pointFor(path)
 
   if (!mounts.delete(point)) throw new SystemError('EINVAL')

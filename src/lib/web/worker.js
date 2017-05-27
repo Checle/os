@@ -1,6 +1,7 @@
 // https://w3c.github.io/workers/
 
 import {Console} from './console.js'
+import {clearInterval, clearTimeout, setInterval, setTimeout} from 'web-zones'
 
 export class WorkerLocation {
   constructor (href) {
@@ -16,35 +17,10 @@ export class WorkerLocation {
 }
 
 export class WindowOrWorkerGlobalScope {
-  setTimeout (handler, timeout = 0, ...args) {
-    let promise = new Promise((resolve, reject) => {
-      let callback = (...args) => {
-        handler(...args)
-      }
-
-      let id = setTimeout(callback, timeout, ...args)
-      let cancel = () => clearTimeout(id)
-
-      return zone.add(promise, cancel, 'timer')
-    })
-  }
-
-  clearTimeout (handle = 0) {
-    zone.cancel(handle, 'timer')
-  }
-
-  setInterval (handler, timeout = 0, ...args) {
-    let promise = new Promise((resolve, reject) => {
-      let id = setInterval((...args) => zone.delete(promise) && handler(...args), timeout, ...args)
-      let cancel = () => clearInterval(id)
-
-      return zone.add(promise, cancel, 'timer')
-    })
-  }
-
-  clearInterval (handle = 0) {
-    zone.cancel(handle, 'timer')
-  }
+  clearInterval = clearInterval
+  clearTimeout = clearTimeout
+  setInterval = setInterval
+  setTimeout = setTimeout
 }
 
 export class WorkerGlobalScope {

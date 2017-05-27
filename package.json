@@ -46,9 +46,8 @@
     "whatwg-fetch": "^2.0.3"
   },
   "dependencies": {
-    "@record/node-module-loader": "^0.1.6",
+    "@record/node-module-loader": "^0.1.7",
     "@record/web-assembly": "^0.7.2",
-    "web-zones": "^0.7.4",
     "argparse": "^1.0.9",
     "babel-cli": "^6.24.1",
     "babel-plugin-minify-mangle-names": "0.0.8",
@@ -61,11 +60,13 @@
     "dom-urls": "^1.1.0",
     "es-module-loader": "^2.1.5",
     "isomorphic-fetch": "^2.2.1",
+    "realms-polyfill": "^0.7.3",
     "rollup": "^0.41.6",
     "systemjs": "^0.20.12",
     "systemjs-plugin-json": "^0.3.0",
     "text-encoding-utf-8": "^1.0.1",
     "url-polyfill": "^1.0.5",
-    "web-streams-polyfill": "^1.3.2"
+    "web-streams-polyfill": "^1.3.2",
+    "web-zones": "^0.7.4"
   }
 }

@@ -8,31 +8,20 @@ import {WorkerGlobalScope} from '../../lib/libweb.js'
 export * from './api/io.js'
 export * from './api/mount.js'
 
-export function syscall (id, ...args) {
-  let api = Process.current.api
-  let target = api[id]
-
-  if (typeof target !== 'function') {
-    throw new SystemError('ENOTSUP')
-  }
-
-  return target.apply(api, args)
-}
-
 export function getpid () {
-  return Process.current.id
+  return this.process.id
 }
 
 export function getuid () {
-  return Process.current.uid
+  return this.process.uid
 }
 
 export function getgid () {
-  return Process.current.gid
+  return this.process.gid
 }
 
 export function setuid (uid) {
-  const process = Process.current
+  const process = this.process
 
   if (process.uid !== 0) throw new Error('EPERM')
 
@@ -40,39 +29,39 @@ export function setuid (uid) {
 }
 
 export function setgid (gid) {
-  if (Process.current.uid !== 0) throw new Error('EPERM')
+  if (this.process.uid !== 0) throw new Error('EPERM')
 
-  Process.current.gid = gid
+  this.process.gid = gid
 }
 
 export function getcwd () {
-  return Process.current.cwd
+  return this.process.cwd
 }
 
 export function getenc () {
-  return Process.current.encoding
+  return this.process.encoding
 }
 
 export function setenc (encoding) {
-  Process.current.encoding = encoding
+  this.process.encoding = encoding
 }
 
 export async function chdir (path) {
   path = await this.realpath(path)
 
-  Process.current.cwd = path
+  this.process.cwd = path
 }
 
 export async function chroot (path) {
-  if (Process.current.uid !== 0) throw new Error('EPERM')
+  if (this.process.uid !== 0) throw new Error('EPERM')
 
-  path = Process.current.root + await this.realpath(path)
+  path = this.process.root + await this.realpath(path)
 
-  Process.current.root = path
+  this.process.root = path
 }
 
 export function getenv (name) {
-  let env = Process.current.env
+  let env = this.process.env
 
   if (!env.hasOwnProperty(name)) return null
 
@@ -80,7 +69,7 @@ export function getenv (name) {
 }
 
 export function setenv (envname, envval, overwrite = true) {
-  let env = Process.current.env
+  let env = this.process.env
 
   if (env.hasOwnProperty(envname) && !overwrite) return
 
@@ -88,7 +77,7 @@ export function setenv (envname, envval, overwrite = true) {
 }
 
 export function clone (fn, thisArg, flags, ...args) {
-  let process = Process.current
+  let process = this.process
   let child = process.spawn()
 
   setTimeout(() => child.run(fn, thisArg, ...args), 0)
@@ -97,7 +86,7 @@ export function clone (fn, thisArg, flags, ...args) {
 }
 
 export function exit (status) {
-  Process.current.terminate(status || null)
+  this.process.terminate(status || null)
 
   // Promise that does not resolve
   return new Promise(() => null)
@@ -114,7 +103,7 @@ export async function readfile (filename) {
 }
 
 export async function instantiate (key, parent) {
-  let process = Process.current
+  let process = this.process
 
   if (process.uid === 0 && key[0] !== '.' && key[0] !== '/' && key.indexOf(':') === -1) {
     if (typeof require === 'function') {
@@ -132,7 +121,7 @@ export async function instantiate (key, parent) {
 export async function execvp (pathname, argv = []) {
   // Resolve pathname against `PATH`
   // POSIX requires any pathname containing a slash to be referenced to a local context
-  let paths = pathname.indexOf('/') === -1 ? Process.current.env.PATH : Process.current.cwd
+  let paths = pathname.indexOf('/') === -1 ? this.process.env.PATH : this.process.cwd
 
   pathname = await this.resolve(pathname, paths)
 
@@ -140,7 +129,7 @@ export async function execvp (pathname, argv = []) {
 }
 
 export async function execv (path, argv = []) {
-  let process = Process.current
+  let process = this.process
   let exports
 
   await this.access(path, X_OK)
@@ -197,16 +186,16 @@ export async function execv (path, argv = []) {
 }
 
 export function dup (filedes) {
-  Process.current.files.add(Process.current.files.get(filedes))
+  this.process.files.add(this.process.files.get(filedes))
 }
 
 export function dup2 (filedes, filedes2) {
-  Process.current.files.set(filedes, Process.current.files.get(filedes))
+  this.process.files.set(filedes, this.process.files.get(filedes))
 }
 
 export function waitpid (pid, options) {
   return new Promise((resolve, reject) => {
-    let process = Process.current.namespace.processes.get(pid)
+    let process = this.process.namespace.processes.get(pid)
 
     if (!process) reject(new Error('ECHILD'))
 
@@ -216,28 +205,28 @@ export function waitpid (pid, options) {
 
 let defaultAction = {
   handler: sig => {
-    Process.current.cancel()
+    this.process.cancel()
   }
 }
 
 export function kill (pid, sig) {
-  let process = Process.current.namespace.processes.get(pid)
+  let process = this.process.namespace.processes.get(pid)
 
   if (!process) throw new Error('ESRCH')
 
-  let action = Process.current.actions[sig] || defaultAction
+  let action = this.process.actions[sig] || defaultAction
 
   action.handler(sig)
 }
 
 export function evaluate (code) {
-  return Process.current.realm.eval(code)
+  return this.process.realm.eval(code)
 }
 
 export async function uselib (library) {
   // TODO: also freeze and add to global import loader registry
 
-  let process = Process.current
+  let process = this.process
 
   if (process.uid !== 0) throw new Error('EPERM')
 
@@ -264,7 +253,7 @@ export async function uselib (library) {
 export async function resolve (filename, paths, extensions = ['']) {
   if (filename[0] === '/') return await this.realpath(filename)
 
-  if (paths == null) paths.push(Process.current.cwd)
+  if (paths == null) paths.push(this.process.cwd)
   else if (typeof paths === 'string') paths = paths.split(':')
 
   for (let path of paths) if (path != null) {

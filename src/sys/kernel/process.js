@@ -1,4 +1,3 @@
-import {syscall} from './api.js'
 import Namespace from './namespace.js'
 import {IDMap} from '../utils/pool.js'
 import {Zone} from 'web-zones'
@@ -51,7 +50,9 @@ export default class Process extends Zone {
     this.name = '<process ' + this.id + '>'
     this.parent = parent
     this.api = Object.create(this.namespace.api)
+    this.api.process = this
     this.encoding = this.namespace.encoding
+    this.syscall = this.syscall.bind(this)
   }
 
   terminate (status) {
@@ -68,7 +69,7 @@ export default class Process extends Zone {
     zone[PROCESS] = Process.current
     zone[SYSCALL] = global.syscall
     Process.current = this
-    global.syscall = syscall
+    global.syscall = this.syscall
   }
 
   onleave () {
@@ -85,5 +86,15 @@ export default class Process extends Zone {
     for (let child of this.childNodes) {
       this.parentNode.appendChild(child)
     }
+  }
+
+  syscall (id, ...args) {
+    let target = this.api[id]
+
+    if (typeof target !== 'function') {
+      throw new SystemError('ENOTSUP')
+    }
+
+    return target.apply(this.api, args)
   }
 }

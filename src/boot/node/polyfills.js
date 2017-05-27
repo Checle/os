@@ -2,7 +2,7 @@ import 'isomorphic-fetch'
 import 'web-streams-polyfill'
 import URL from 'dom-urls'
 import {TextDecoder, TextEncoder} from 'text-encoding-utf-8'
-import {Realm} from '@checle/realms'
+import {Realm} from 'realms-polyfill'
 
 global.TextDecoder = TextDecoder
 global.TextEncoder = TextEncoder
