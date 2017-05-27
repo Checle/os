@@ -1,9 +1,7 @@
 // https://fetch.spec.whatwg.org/
 
 import URL from './url.js'
-import {BUFSIZ} from '../c/stdio.js'
-import {close, read} from '../c/unistd.js'
-import {open} from '../c/fcntl.js'
+import {close, open, read, BUFSIZ} from '../libc.js'
 
 let baseFetch = global.fetch
 

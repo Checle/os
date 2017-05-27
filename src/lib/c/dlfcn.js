@@ -1,20 +1,15 @@
 // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/dlfcn.h.html
 
-let handles = {}
-
 export async function dlopen (file, mode = 0) {
-  let handle = await System.import(file)
-  let symbol = Symbol(file)
+  let handle = await syscall('instantiate', file)
 
-  handles[symbol] = handle
-
-  return symbol
+  return Object.create(handle)
 }
 
 export function dlsym (handle, name) {
-  return handles[handle][name]
+  return handle[name]
 }
 
 export function dlclose (handle) {
-  delete handles[handle]
+  Object.setPrototypeOf(handle, Object.prototype)
 }

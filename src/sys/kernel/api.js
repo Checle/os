@@ -1,7 +1,7 @@
 import * as libc from '../../lib/libc.js'
 import Process from './process.js'
 import SystemLoader from './loader.js'
-import {read, SEEK_SET, X_OK} from '../../lib/libc.js'
+import {dirname, read, SEEK_SET, X_OK} from '../../lib/libc.js'
 import {SystemError} from './errors.js'
 import {WorkerGlobalScope} from '../../lib/libweb.js'
 
@@ -193,13 +193,23 @@ export function dup2 (filedes, filedes2) {
   this.process.files.set(filedes, this.process.files.get(filedes))
 }
 
-export function waitpid (pid, options) {
+export function waitpid (pid, wstatus, options) {
   return new Promise((resolve, reject) => {
     let process = this.process.namespace.processes.get(pid)
 
     if (!process) reject(new Error('ECHILD'))
 
-    process.addEventListener('finish', event => resolve(process.status))
+    process.addEventListener('finish', event => {
+      let status = {
+        siPid: process.id,
+        siUid: process.uid,
+        siSigno: SIGCHLD,
+        siStatus: process.status,
+        siCode: CLD_EXITED,
+      }
+
+      resolve([process.id, status])
+    })
   })
 }
 
@@ -261,6 +271,28 @@ export async function resolve (filename, paths, extensions = ['']) {
       try {
         return await this.realpath(path + '/' + filename + extension)
       } catch (error) { }
+    }
+  }
+}
+
+export async function mkstemp (template) {
+  let prefix = template.replace(/X{6}$/, template)
+
+  while (true) {
+    let filename = prefix
+
+    for (let i = 0, c; i < 6; i++) {
+      do {
+        c = String.fromCharCode(Math.floor(Math.random()*128))
+      } while (!/[\w\d\-.]/.test(c))
+
+      filename += c
+    }
+
+    try {
+      await this.realpath(filename)
+    } catch (e) {
+      return filename
     }
   }
 }

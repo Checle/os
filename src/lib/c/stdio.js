@@ -1,8 +1,7 @@
 // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/stdio.h.html
 
 import * as fcntl from './fcntl.js'
-import * as unistd from './unistd.js'
-import {close, unlink} from './unistd.js'
+import {close, lseek, open, unlink, read} from '../libc.js'
 
 export const BUFSIZ = 1024
 export const EOF = Symbol('EOF')
@@ -24,11 +23,11 @@ export function eof (stream) {
 }
 
 export function fseek (stream, offset, whence) {
-  return unistd.lseek(stream.fd, offset, whence)
+  return lseek(stream.fd, offset, whence)
 }
 
 export function fread (buffer, size, nitems, stream) {
-  return unistd.read(stream.fd, buffer, size * nitems)
+  return read(stream.fd, buffer, size * nitems)
 }
 
 export function fwrite (buffer, size, nitems, stream) {
@@ -40,7 +39,7 @@ export function rename (old, newp) {
 }
 
 export async function fopen (filename, mode = 'r+') {
-  let fd = await fcntl.open(filename, modes[mode])
+  let fd = await open(filename, modes[mode])
 
   return fdopen(fd)
 }
@@ -54,7 +53,7 @@ export function fdopen (filedes, mode = 'r+') {
 }
 
 export function fclose (stream) {
-  return unistd.close(stream.fd)
+  return close(stream.fd)
 }
 
 export function fileno (stream) {

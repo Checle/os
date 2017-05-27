@@ -1,7 +1,5 @@
 // http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html
 
-import {getpid} from './unistd.js'
-
 export const SIGHUP = 1
 export const SIGINT = 2
 export const SIGQUIT = 3
@@ -31,8 +29,15 @@ export const SIGPROF = 27
 export const SIGPOLL = 29
 export const SIGSYS = 31
 
+export const CLD_EXITED = 1
+export const CLD_KILLED = 2
+export const CLD_DUMPED = 3
+export const CLD_TRAPPED = 4
+export const CLD_STOPPED = 5
+export const CLD_CONTINUED = 6
+
 export async function raise (sig) {
-  return kill(await getpid(), sig)
+  return kill(await syscall('getpid'), sig)
 }
 
 export function kill (pid, sig) {

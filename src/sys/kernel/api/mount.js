@@ -121,8 +121,41 @@ export function unlink () {
   return callTargetFunction.call(this, 'unlink', ...arguments)
 }
 
-export function read () {
-  return callFileFunction.call(this, 'read', ...arguments)
+export async function read (fildes, res, nbyte) {
+  if (res === undefined) res = this.getenc()
+
+  if (res !== null && typeof res !== 'string') {
+    return callFileFunction.call(this, 'read', fildes, res, nbyte == null ? res.length : nbyte)
+  }
+
+  let buffers = []
+  let length = 0
+
+  do {
+    let buffer = new Uint8Array(nbyte == null ? BUFSIZ : Math.min(BUFSIZ, nbyte - length))
+    let n = await this.read(fildes, buffer)
+
+    if (n <= 0) break
+
+    buffers.push(buffer.slice(0, n))
+
+    length += n
+  } while (nbyte == null || length < nbyte)
+
+  let array = new Uint8Array(length)
+  let i = 0
+
+  for (let buffer of buffers) {
+    array.set(buffer, i)
+
+    i += buffer.length
+  }
+
+  if (res === null) return array
+
+  let decoder = new TextDecoder(res)
+
+  return decoder.decode(array)
 }
 
 export function write () {

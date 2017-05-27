@@ -1,4 +1,4 @@
-import * as api from '../../lib/libc.js'
+import * as libc from '../../lib/libc.js'
 
 function createFunction (fn) {
   return function (...args) {
@@ -8,37 +8,37 @@ function createFunction (fn) {
   }
 }
 
-export var access = createFunction(api.access)
-export var chmod = createFunction(api.chmod)
-export var chown = createFunction(api.chown)
-export var close = createFunction(api.close)
-export var fchmod = createFunction(api.fchmod)
-export var fchown = createFunction(api.fchown)
-export var fdatasync = createFunction(api.fdatasync)
-export var fstat = createFunction(api.fstat)
-export var fsync = createFunction(api.fsync)
-export var ftruncate = createFunction(api.ftruncate)
-export var lchmod = createFunction(api.lchmod)
-export var lchown = createFunction(api.lchown)
-export var link = createFunction(api.link)
-export var lstat = createFunction(api.lstat)
-export var mkdir = createFunction(api.mkdir)
-export var open = createFunction(api.open)
-export var readdir = createFunction(api.readdir)
-export var readlink = createFunction(api.readlink)
-export var realpath = createFunction(api.realpath)
-export var rename = createFunction(api.rename)
-export var rmdir = createFunction(api.rmdir)
-export var stat = createFunction(api.stat)
-export var symlink = createFunction(api.symlink)
-export var truncate = createFunction(api.truncate)
-export var unlink = createFunction(api.unlink)
-export var write = createFunction(api.write)
+export var access = createFunction(libc.access)
+export var chmod = createFunction(libc.chmod)
+export var chown = createFunction(libc.chown)
+export var close = createFunction(libc.close)
+export var fchmod = createFunction(libc.fchmod)
+export var fchown = createFunction(libc.fchown)
+export var fdatasync = createFunction(libc.fdatasync)
+export var fstat = createFunction(libc.fstat)
+export var fsync = createFunction(libc.fsync)
+export var ftruncate = createFunction(libc.ftruncate)
+export var lchmod = createFunction(libc.lchmod)
+export var lchown = createFunction(libc.lchown)
+export var link = createFunction(libc.link)
+export var lstat = createFunction(libc.lstat)
+export var mkdir = createFunction(libc.mkdir)
+export var open = createFunction(libc.open)
+export var readdir = createFunction(libc.readdir)
+export var readlink = createFunction(libc.readlink)
+export var realpath = createFunction(libc.realpath)
+export var rename = createFunction(libc.rename)
+export var rmdir = createFunction(libc.rmdir)
+export var stat = createFunction(libc.stat)
+export var symlink = createFunction(libc.symlink)
+export var truncate = createFunction(libc.truncate)
+export var unlink = createFunction(libc.unlink)
+export var write = createFunction(libc.write)
 
 export var read = createFunction(async function read (fd, buffer, offset, length, position) {
-  await api.lseek(fd, position)
+  await libc.lseek(fd, position)
 
   if (offset) buffer = buffer.slice(offset)
 
-  return await api.read(fildes, buffer, length)
+  return await libc.read(fildes, buffer, length)
 })
