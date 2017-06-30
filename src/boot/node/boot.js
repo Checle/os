@@ -1,16 +1,13 @@
 import * as fs from '../../lib/node/fs.js'
 import './polyfills.js'
-import NodeProccess from './process.js'
+import NodeProcess from './process.js'
 import Process from '../../sys/kernel/process.js'
 import init from '../init.js'
 import Module from 'module'
 
 export default async function boot (options) {
   let nodeProcess = global.process
-
-  nodeProcess.on('unhandledRejection', (reason, promise) => { throw reason })
-
-  let process = new NodeProccess(options)
+  let process = new NodeProcess(options)
 
   process.enter()
 

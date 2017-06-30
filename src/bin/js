@@ -2,7 +2,7 @@
 
 System.register(['./js.js'], function () {
   return {
-    setters: [],
+    setters: [function () {}],
     execute: function () {},
   }
 })

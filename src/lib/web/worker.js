@@ -30,9 +30,9 @@ export class WorkerGlobalScope {
 
   constructor (href) {
     Object.defineProperties(this, {
-      self: {value: this},
-      location: {value: new WorkerLocation(href)},
-      console: {value: new Console()},
+      self: {value: this, enumerable: true},
+      location: {value: new WorkerLocation(href), enumerable: true},
+      console: {value: new Console(), enumerable: true},
     })
   }
 }

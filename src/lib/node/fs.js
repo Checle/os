@@ -1,4 +1,4 @@
-import * as libc from '../../lib/libc.js'
+import * as libc from '../libc.js'
 
 function createFunction (fn) {
   return function (...args) {
@@ -36,9 +36,11 @@ export var unlink = createFunction(libc.unlink)
 export var write = createFunction(libc.write)
 
 export var read = createFunction(async function read (fd, buffer, offset, length, position) {
-  await libc.lseek(fd, position)
+  let syscall = global.syscall
+
+  await syscall('lseek', fd, position)
 
   if (offset) buffer = buffer.slice(offset)
 
-  return await libc.read(fildes, buffer, length)
+  return await syscall('read', fildes, buffer, length)
 })

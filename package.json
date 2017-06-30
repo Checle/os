@@ -47,7 +47,6 @@
   },
   "dependencies": {
     "@record/node-module-loader": "^0.1.7",
-    "@record/web-assembly": "^0.7.2",
     "argparse": "^1.0.9",
     "babel-cli": "^6.24.1",
     "babel-plugin-minify-mangle-names": "0.0.8",

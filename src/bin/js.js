@@ -5,7 +5,6 @@ import * as repl from 'repl'
 import * as util from 'util'
 import * as vm from 'vm'
 import {ArgumentParser} from 'argparse'
-import {instantiate} from '@record/web-assembly'
 import {rollup} from 'rollup'
 import {writeFileSync} from 'fs'
 

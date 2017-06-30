@@ -44,6 +44,8 @@ export function normalize (filename, parentname) {
   return filename
 }
 
+export var hasOwnProperty = Function.prototype.call.bind(Object.prototype.hasOwnProperty)
+
 
 /*
 function normalize (filename, parentname) {

@@ -104,18 +104,6 @@ export async function readfile (filename) {
 
 export async function instantiate (key, parent) {
   let process = this.process
-
-  if (process.uid === 0 && key[0] !== '.' && key[0] !== '/' && key.indexOf(':') === -1) {
-    if (typeof require === 'function') {
-      let exports = require(key)
-
-      if (typeof exports !== 'object') {
-        exports = {default: exports}
-      }
-
-      return exports
-    }
-  }
 }
 
 export async function execvp (pathname, argv = []) {
@@ -135,16 +123,13 @@ export async function execv (path, argv = []) {
   await this.access(path, X_OK)
 
   let href = new URL(encodeURIComponent(path).replace(/%2F/g, '/'), 'file:///').href
+  let system = new SystemLoader(process)
   let endowments = new WorkerGlobalScope(href)
-  let system = new SystemLoader()
 
-  Object.defineProperty(endowments, 'System', {value: system})
+  Object.assign(endowments, {System: system, syscall: process.syscall.bind(process)})
 
   process.system = system
-  process.realm = {
-    global,
-    eval: eval,
-  } // TODO: new Realm(endowments)
+  process.realm = new Realm().spawn(endowments) // TODO: Realm.immutableRoot().spawn(endowments)
   process.path = path
   process.arguments = argv.slice()
 
@@ -260,11 +245,16 @@ export async function uselib (library) {
   Object.assign(process.api, library)
 }
 
-export async function resolve (filename, paths, extensions = ['']) {
+export async function resolve (filename, paths, extensions) {
   if (filename[0] === '/') return await this.realpath(filename)
 
   if (paths == null) paths.push(this.process.cwd)
   else if (typeof paths === 'string') paths = paths.split(':')
+
+  if (extensions == null) extensions = []
+  else if (typeof extensions === 'string') extensions = [extensions]
+
+  extensions = ['', ...extensions]
 
   for (let path of paths) if (path != null) {
     for (let extension of extensions) {

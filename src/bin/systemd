@@ -2,7 +2,7 @@
 
 System.register(['./systemd.js'], function () {
   return {
-    setters: [],
+    setters: [function () {}],
     execute: function () {},
   }
 })

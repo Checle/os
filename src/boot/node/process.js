@@ -1,5 +1,4 @@
 import * as path from 'path'
-import Loader from './loader'
 import Process from '../../sys/kernel/process.js'
 import VFS from './vfs.js'
 
@@ -20,10 +19,6 @@ export default class NodeProcess extends Process {
     if (options == null) options = {}
 
     process.on('unhandledRejection', (reason, promise) => { throw reason })
-
-    if (options.node) {
-      this.namespace.loader = new Loader()
-    }
 
     if (options.clean) {
       return

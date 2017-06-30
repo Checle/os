@@ -1,6 +1,5 @@
 import {getpid, getuid} from '../../lib/c/unistd.js'
 import {System} from '../../lib/web/system.js'
-import {instantiate} from '@record/web-assembly'
 import {ArgumentParser} from 'argparse'
 import {readFileSync} from 'fs'
 
@@ -67,7 +66,8 @@ async function main () {
   }
 
   let module = new Module('')
-  instantiate(code, new NodeGlobalScope(process))
+
+  // instantiate(code, new NodeGlobalScope(process))
 }
 
 main()

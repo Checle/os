@@ -2,6 +2,8 @@
 let NodeLoader = require('@record/node-module-loader').NodeLoader
 let loader = new NodeLoader()
 
+process.on('unhandledRejection', (reason, promise) => { throw reason })
+
 loader.import('../dist/boot/node/boot.js').then(
   boot => boot.default({node: true})).then(async () => {
     zone.api.execv('/bin/record', process.argv.slice(2))
